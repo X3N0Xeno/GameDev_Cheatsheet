@@ -1,0 +1,17 @@
+<div class="entity-stage">
+    <div class="overhead-ui">
+        <div class="bar-meta-row" style="font-size: 9px; margin-bottom: 2px;">
+            <span class="hp-label">Goblin</span>
+            <span class="hp-values">@OverheadHealth / 100</span>
+        </div>
+        <div class="overhead-bar-frame">
+            <div class="overhead-fill" style="width: @(OverheadHealth)%;"></div>
+        </div>
+    </div>
+    <div class="entity-avatar">👾</div>
+    <span style="font-size: 10px; color: #627269;">Entity in World Coordinates (Decoupled Y-Offset)</span>
+</div>
+
+@code {
+    [Parameter] public int OverheadHealth { get; set; } = 100;
+}

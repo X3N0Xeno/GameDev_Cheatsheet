@@ -1,0 +1,161 @@
+@implements IDisposable
+
+<div class="viewport-shell-box" style="width: 100%; height: 100%; max-height: 520px;">
+    <div class="shell-label">DAY_NIGHT_CYCLE.gd — WEIGHTED CENTROID FUZZY LOGIC SKY INTERPOLATION</div>
+    <div class="shell-content" style="height: 100%; padding: 32px 16px 12px 16px;">
+        <div style="position: relative; width: 100%; height: 100%; background: #080c08; border: 1px solid #1a2a1a; overflow: hidden;">
+            <!-- Smooth Fuzzy Weighted Sky Gradient -->
+            <div style="position: absolute; inset: 0; background: @fuzzySkyGradient;"></div>
+
+            <svg width="100%" height="100%" viewBox="0 0 960 440" style="position: absolute; inset: 0;">
+                <!-- Celestial Orbit -->
+                <ellipse cx="480" cy="380" rx="380" ry="260" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5" stroke-dasharray="4 4" />
+
+                <!-- Sun (Opacity fades smoothly when dipping below horizon) -->
+                <circle cx="@sunX" cy="@sunY" r="22" fill="#ffea78" stroke="#ffaa00" stroke-width="2" 
+                        opacity="@Math.Clamp((fuzzyNoon * 1.5 + fuzzyDawn + fuzzyDusk), 0.1, 1.0)">
+                    <animate attributeName="r" values="22;24;22" dur="3s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- Moon -->
+                <circle cx="@moonX" cy="@moonY" r="16" fill="#c0d4ff" stroke="#7094d4" stroke-width="2" 
+                        opacity="@Math.Clamp((fuzzyNight * 1.4), 0.1, 1.0)" />
+
+                <!-- Mountain Silhouettes -->
+                <polygon points="0,440 180,260 380,380 560,220 780,390 960,280 960,440" fill="#090f0a" />
+                <polygon points="0,440 240,320 440,400 660,300 880,410 960,360 960,440" fill="#040705" />
+            </svg>
+
+            <!-- Fuzzy Membership Telemetry Display -->
+            <div style="position: absolute; top: 16px; left: 18px; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: #4ade80; background: rgba(12, 18, 12, 0.85); padding: 8px 14px; border: 1px solid #233827; box-shadow: 0 4px 12px rgba(0,0,0,0.6);">
+                <div style="font-weight: bold; font-size: 0.72rem;">CLOCK: @GetTimeLabel() · SPEED: @(Speed)x</div>
+                <div style="margin-top: 5px; color: #8fa298; font-size: 0.56rem; display: flex; gap: 10px;">
+                    <span>DAWN: @((fuzzyDawn * 100).ToString("0"))%</span>
+                    <span>NOON: @((fuzzyNoon * 100).ToString("0"))%</span>
+                    <span>DUSK: @((fuzzyDusk * 100).ToString("0"))%</span>
+                    <span>NIGHT: @((fuzzyNight * 100).ToString("0"))%</span>
+                </div>
+            </div>
+
+            <div style="position: absolute; bottom: 10px; left: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #5a7a58;">
+                SUN_ELEVATION: @(((CurrentTime * 360.0) - 90.0).ToString("0.0"))° · STATUS: @(IsPlaying ? "RUNNING (CONTINUOUS DEFUZZIFICATION)" : "PAUSED")
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public double CurrentTime { get; set; } = 0.25;
+    public double Speed { get; set; } = 1.0;
+    public bool IsPlaying { get; set; } = true;
+
+    private double fuzzyNight = 0;
+    private double fuzzyDawn = 0;
+    private double fuzzyNoon = 0;
+    private double fuzzyDusk = 0;
+    private string fuzzySkyGradient = "";
+
+    private CancellationTokenSource cts = new();
+
+    private double sunX => 480 + Math.Cos(CurrentTime * Math.PI * 2.0 - Math.PI * 0.5) * 380;
+    private double sunY => 380 + Math.Sin(CurrentTime * Math.PI * 2.0 - Math.PI * 0.5) * 260;
+
+    private double moonX => 480 + Math.Cos((CurrentTime + 0.5) * Math.PI * 2.0 - Math.PI * 0.5) * 380;
+    private double moonY => 380 + Math.Sin((CurrentTime + 0.5) * Math.PI * 2.0 - Math.PI * 0.5) * 260;
+
+    protected override void OnInitialized()
+    {
+        CalculateFuzzyMemberships();
+        _ = RunCycleLoopAsync(cts.Token);
+    }
+
+    private async Task RunCycleLoopAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(20));
+        DateTime last = DateTime.UtcNow;
+
+        while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+        {
+            DateTime now = DateTime.UtcNow;
+            double dt = (now - last).TotalSeconds;
+            last = now;
+
+            if (IsPlaying)
+            {
+                CurrentTime = (CurrentTime + (dt / 30.0) * Speed) % 1.0;
+                CalculateFuzzyMemberships();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    // Continuous triangular/bell-curve fuzzy membership sets
+    private void CalculateFuzzyMemberships()
+    {
+        double t = CurrentTime;
+
+        // Peak at 0.25 (Dawn)
+        fuzzyDawn = Math.Max(0.0, 1.0 - Math.Abs(t - 0.25) / 0.14);
+        // Peak at 0.50 (Noon)
+        fuzzyNoon = Math.Max(0.0, 1.0 - Math.Abs(t - 0.50) / 0.16);
+        // Peak at 0.75 (Dusk)
+        fuzzyDusk = Math.Max(0.0, 1.0 - Math.Abs(t - 0.75) / 0.14);
+
+        // Peak at 0.0 and 1.0 (Midnight)
+        if (t < 0.5)
+            fuzzyNight = Math.Max(0.0, 1.0 - t / 0.22);
+        else
+            fuzzyNight = Math.Max(0.0, 1.0 - (1.0 - t) / 0.22);
+
+        // Defuzzification: Weighted RGB blend for Top and Bottom horizon colors
+        fuzzySkyGradient = ComputeFuzzyGradient();
+    }
+
+    private record Rgb(double R, double G, double B);
+
+    // Color definitions for each fuzzy set
+    private readonly Rgb nightTop = new(4, 6, 14);
+    private readonly Rgb nightBot = new(14, 20, 42);
+
+    private readonly Rgb dawnTop = new(28, 20, 46);
+    private readonly Rgb dawnBot = new(190, 92, 38);
+
+    private readonly Rgb noonTop = new(18, 52, 94);
+    private readonly Rgb noonBot = new(92, 168, 218);
+
+    private readonly Rgb duskTop = new(26, 16, 42);
+    private readonly Rgb duskBot = new(170, 62, 32);
+
+    private string ComputeFuzzyGradient()
+    {
+        double sum = fuzzyNight + fuzzyDawn + fuzzyNoon + fuzzyDusk;
+        if (sum <= 0.0001) sum = 1.0;
+
+        double topR = (nightTop.R * fuzzyNight + dawnTop.R * fuzzyDawn + noonTop.R * fuzzyNoon + duskTop.R * fuzzyDusk) / sum;
+        double topG = (nightTop.G * fuzzyNight + dawnTop.G * fuzzyDawn + noonTop.G * fuzzyNoon + duskTop.G * fuzzyDusk) / sum;
+        double topB = (nightTop.B * fuzzyNight + dawnTop.B * fuzzyDawn + noonTop.B * fuzzyNoon + duskTop.B * fuzzyDusk) / sum;
+
+        double botR = (nightBot.R * fuzzyNight + dawnBot.R * fuzzyDawn + noonBot.R * fuzzyNoon + duskBot.R * fuzzyDusk) / sum;
+        double botG = (nightBot.G * fuzzyNight + dawnBot.G * fuzzyDawn + noonBot.G * fuzzyNoon + duskBot.G * fuzzyDusk) / sum;
+        double botB = (nightBot.B * fuzzyNight + dawnBot.B * fuzzyDawn + noonBot.B * fuzzyNoon + duskBot.B * fuzzyDusk) / sum;
+
+        return $"linear-gradient(180deg, rgb({(int)topR}, {(int)topG}, {(int)topB}) 0%, rgb({(int)botR}, {(int)botG}, {(int)botB}) 100%)";
+    }
+
+    public void TogglePlay() => IsPlaying = !IsPlaying;
+    public void SetTime(double t) { CurrentTime = t; CalculateFuzzyMemberships(); StateHasChanged(); }
+    public void SetSpeed(double s) { Speed = s; StateHasChanged(); }
+
+    private string GetTimeLabel()
+    {
+        int h = (int)(CurrentTime * 24);
+        int m = (int)((CurrentTime * 24 - h) * 60);
+        return $"{h:D2}:{m:D2}";
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

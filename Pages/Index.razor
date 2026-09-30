@@ -1,0 +1,1012 @@
+@page "/"
+@using GameDevCheatsheet.Models
+@using GameDevCheatsheet.Data
+@using GameDevCheatsheet.Components.Previews
+@inject IJSRuntime JS
+
+<div class="app-container" tabindex="0" @onkeydown="HandleGlobalKeydown" @onkeyup="HandleGlobalKeyup" autofocus>
+    <!-- TOP STATUS BAR -->
+    <header class="top-bar">
+        <div class="top-bar-left">
+            <span class="brand">GameDev Component Cheatsheet</span>
+            <span class="sub-route">— @selectedComponent.SubRoute</span>
+        </div>
+        <div class="top-bar-right">
+            <span>GODOT 4.x SDK REV_B</span>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- 1. LEFT SIDEBAR -->
+        <aside class="sidebar">
+            <div class="panel-header-line">
+                <span class="panel-header-title">COMPONENT LIBRARY</span>
+                <span class="panel-header-meta">⚙</span>
+            </div>
+
+            @foreach (var category in categories)
+            {
+                <div class="category-group">
+                    <div class="category-header" @onclick="() => category.IsExpanded = !category.IsExpanded">
+                        <span>@category.Icon @category.Name</span>
+                        <span class="category-arrow @(category.IsExpanded ? "open" : "")">›</span>
+                    </div>
+                    @if (category.IsExpanded)
+                    {
+                        <div class="category-items">
+                            @foreach (var item in category.Items)
+                            {
+                                <div class="category-item @(selectedComponent.Id == item.Id ? "active" : "")"
+                                     @onclick="() => SelectComponent(item)">
+                                    <span style="opacity: 0.5; margin-right: 4px;">›</span>
+                                    @item.Title
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </aside>
+
+        <!-- 2. CENTER VIEWPORT -->
+        <main class="viewport-panel">
+            <div class="panel-header-line" style="position: absolute; top: 0; width: 100%; z-index: 10;">
+                <span class="panel-header-title">VIEWPORT <span style="color: #4b5550;">— @selectedComponent.SubRoute</span></span>
+                <span class="panel-header-meta">1:1 FIT</span>
+            </div>
+
+            <div class="viewport-content">
+                @switch (selectedComponent.Id)
+                {
+                    /* UI/UX */
+                    case "linear-bar":
+                        <LinearBarPreview DisplayHealth="@displayHealth" DisplayGhost="@displayGhost" 
+                                          MaxHealth="@maxHealth" EnableGhost="@enableGhost" />
+                        break;
+                    case "heart-system":
+                        <HeartPreview HeartPoints="@heartPoints" MaxHearts="@maxHearts" />
+                        break;
+                    case "overhead-bar":
+                        <OverheadPreview OverheadHealth="@overheadHealth" />
+                        break;
+                    case "shield-layer":
+                        <ShieldPreview DisplayShield="@displayShield" DisplayHealth="@displayShieldHealth" 
+                                       IsBroken="@isShieldBroken" CooldownMs="@shieldCooldown" />
+                        break;
+
+                    /* MENUS */
+                    case "main-menu":
+                        <MainMenuPreview SelectedMenuIndex="@mainMenuIdx" ActionStatus="@menuStatus"
+                                         OnSelectOption="OnMainMenuOptionClicked" />
+                        break;
+                    case "pause-menu":
+                        <PauseMenuPreview IsPaused="@isGamePaused" 
+                                          OnResume="() => isGamePaused = false" 
+                                          OnRestart="() => isGamePaused = true" 
+                                          OnQuit="() => isGamePaused = false" />
+                        break;
+                    case "audio-settings":
+                        <AudioMixerPreview MasterVolume="@masterVol" MusicVolume="@musicVol" SfxVolume="@sfxVol"
+                                           MasterMuted="@masterMute" MusicMuted="@musicMute" SfxMuted="@sfxMute"
+                                           Fullscreen="@settingFullscreen" Vsync="@settingVsync" 
+                                           ScreenShake="@settingScreenShake" FpsCounter="@settingFps" CrtFilter="@settingCrt"
+                                           OnMasterVolumeChanged="(v) => { masterVol = v; StateHasChanged(); }"
+                                           OnMusicVolumeChanged="(v) => { musicVol = v; StateHasChanged(); }"
+                                           OnSfxVolumeChanged="(v) => { sfxVol = v; StateHasChanged(); }"
+                                           OnToggleMasterMute="() => { masterMute = !masterMute; StateHasChanged(); }"
+                                           OnToggleMusicMute="() => { musicMute = !musicMute; StateHasChanged(); }"
+                                           OnToggleSfxMute="() => { sfxMute = !sfxMute; StateHasChanged(); }"
+                                           OnToggleFullscreen="() => { settingFullscreen = !settingFullscreen; StateHasChanged(); }"
+                                           OnToggleVsync="() => { settingVsync = !settingVsync; StateHasChanged(); }"
+                                           OnToggleScreenShake="() => { settingScreenShake = !settingScreenShake; StateHasChanged(); }"
+                                           OnToggleFpsCounter="() => { settingFps = !settingFps; StateHasChanged(); }"
+                                           OnToggleCrtFilter="() => { settingCrt = !settingCrt; StateHasChanged(); }" />
+                        break;
+                    case "hud-overlay":
+                        <HudOverlayPreview HudHealth="@hudHealth" Score="@hudScore" Stamina="@hudStamina" 
+                                           CurrentAmmo="@hudCurrentAmmo" ReserveAmmo="@hudReserveAmmo"
+                                           IsTakingDamage="@hudFlash" />
+                        break;
+
+                    /* MOVEMENT */
+                    case "platformer-2d":
+                        <PlatformerPreview @ref="platformerRef" />
+                        break;
+                    case "topdown-2d":
+                        <TopDownPreview @ref="topdownRef" />
+                        break;
+                    case "fighting-2d":
+                        <FightingPreview @ref="fighterRef" />
+                        break;
+                    case "fps-3d":
+                        <FpsPreview @ref="fpsRef" />
+                        break;
+                    case "thirdperson-3d":
+                        <ThirdPersonPreview @ref="tpRef" />
+                        break;
+
+                    /* COMBAT */
+                    case "hitscan":
+                        <HitscanPreview @ref="hitscanRef" />
+                        break;
+                    case "projectile":
+                        <ProjectilePreview @ref="projectileRef" />
+                        break;
+                    case "melee-hitbox":
+                        <MeleePreview @ref="meleeRef" />
+                        break;
+
+                    /* SYSTEMS */
+                    case "grid-inventory":
+                        <InventoryPreview @ref="inventoryRef" />
+                        break;
+                    case "interact-prompt":
+                        <InteractablePreview @ref="interactRef" />
+                        break;
+                    case "day-night":
+                        <DayNightPreview @ref="dayNightRef" />
+                        break;
+                }
+            </div>
+        </main>
+
+        <!-- 3. RIGHT INSPECTOR -->
+        <aside class="inspector-panel">
+            <div class="panel-header-line">
+                <span class="panel-header-title">INSPECTOR</span>
+                <span class="panel-header-meta">— Dynamic Controls</span>
+            </div>
+
+            <div class="inspector-section">
+                @switch (selectedComponent.Id)
+                {
+                    /* UI/UX CONTROLS */
+                    case "linear-bar":
+                        <div class="f-section-label">Health Controls</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => TriggerHealthDelta(-20)">− DAMAGE 20</button>
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => TriggerHealthDelta(10)">+ HEAL 10</button>
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Current HP (0–100)</span>
+                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@targetHealth</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="@targetHealth" @oninput="OnSliderInput" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
+                        </div>
+                        <div @onclick="() => enableGhost = !enableGhost" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
+                            <div style="width:13px; height:13px; border:1px solid @(enableGhost ? "#4ade80" : "#2a3428"); background:@(enableGhost ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
+                                @if (enableGhost) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
+                            </div>
+                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Ghost Bar Effect</span>
+                        </div>
+                        break;
+
+                    case "heart-system":
+                        <div class="f-section-label">Heart System</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => heartPoints = Math.Max(0, heartPoints - 1)">− DAMAGE</button>
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => heartPoints = Math.Min(maxHearts * 2, heartPoints + 1)">+ HEAL</button>
+                        </div>
+                        <div class="f-section-label" style="margin-top: 6px;">Container Size (5–30)</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="DecreaseMaxHearts">− MAX HEART</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="IncreaseMaxHearts">+ MAX HEART</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetHearts">RESET</button>
+                        </div>
+                        break;
+
+                    case "overhead-bar":
+                        <div class="f-section-label">Floating Bar</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => overheadHealth = Math.Max(0, overheadHealth - 15)">− DAMAGE 15</button>
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => overheadHealth = Math.Min(100, overheadHealth + 10)">+ HEAL 10</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => overheadHealth = 100">RESET</button>
+                        </div>
+                        break;
+
+                    case "shield-layer":
+                        <div class="f-section-label">Shield & Armor</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="DamageShield">− HIT</button>
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="HealShieldHealth">+ HEAL</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetShield">RESET</button>
+                        </div>
+                        break;
+
+                    /* MENUS CONTROLS */
+                    case "main-menu":
+                        <div class="f-section-label">Main Menu</div>
+                        @foreach (var opt in new[] { "NEW GAME", "LOAD GAME", "SETTINGS", "QUIT" })
+                        {
+                            <div class="f-row">
+                                <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => TriggerMenuAction(opt)">@opt</button>
+                            </div>
+                        }
+                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.54rem; color:#4a6a48; margin-top:8px;">
+                            Keyboard: [W / S] Navigate · [ENTER] Select
+                        </div>
+                        break;
+
+                    case "pause-menu":
+                        <div class="f-section-label">Pause Menu</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => isGamePaused = !isGamePaused">TOGGLE PAUSE (ESC)</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => isGamePaused = false">RESUME</button>
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => isGamePaused = false">QUIT</button>
+                        </div>
+                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.54rem; color:#4a6a48; margin-top:8px;">
+                            Keyboard: Press [ESC] anywhere to Toggle
+                        </div>
+                        break;
+
+                    case "audio-settings":
+                        <div class="f-section-label">Settings</div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Master Volume</span>
+                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(masterVol * 100))</span>
+                            </div>
+                            <input type="range" min="0" max="1" step="0.01" value="@masterVol" @oninput="e => masterVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">SFX Volume</span>
+                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(sfxVol * 100))</span>
+                            </div>
+                            <input type="range" min="0" max="1" step="0.01" value="@sfxVol" @oninput="e => sfxVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
+                        </div>
+                        <div style="margin-bottom: 8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Music Volume</span>
+                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(musicVol * 100))</span>
+                            </div>
+                            <input type="range" min="0" max="1" step="0.01" value="@musicVol" @oninput="e => musicVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
+                        </div>
+                        <div @onclick="() => settingFullscreen = !settingFullscreen" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
+                            <div style="width:13px; height:13px; border:1px solid @(settingFullscreen ? "#4ade80" : "#2a3428"); background:@(settingFullscreen ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
+                                @if (settingFullscreen) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
+                            </div>
+                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Fullscreen</span>
+                        </div>
+                        <div @onclick="() => settingVsync = !settingVsync" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
+                            <div style="width:13px; height:13px; border:1px solid @(settingVsync ? "#4ade80" : "#2a3428"); background:@(settingVsync ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
+                                @if (settingVsync) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
+                            </div>
+                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">V-Sync</span>
+                        </div>
+                        break;
+
+                    case "hud-overlay":
+                        <div class="f-section-label">HUD Overlay</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="width:100%" @onclick="TakeHudHit">HIT PLAYER (-20 HP)</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="flex:1" @onclick="FireWeapon">FIRE WEAPON</button>
+                            <button class="f-btn f-btn-blue" style="flex:1" @onclick="ConsumeHudStamina">DASH (-25 STAMINA)</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => hudScore += 1500">+1500 SCORE</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="ResetHud">RESET</button>
+                        </div>
+                        break;
+
+                    /* MOVEMENT CONTROLS */
+                    case "platformer-2d":
+                        <div class="f-section-label">2D Platformer</div>
+                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Arrow/WASD keys also work in viewport</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => platformerRef?.MoveLeft(true)" 
+                                    @onmouseup="() => platformerRef?.MoveLeft(false)">◄</button>
+                            <button class="f-btn f-btn-green" style="flex:1" 
+                                    @onclick="() => platformerRef?.TriggerJump()">JUMP ▲</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => platformerRef?.MoveRight(true)" 
+                                    @onmouseup="() => platformerRef?.MoveRight(false)">►</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => platformerRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    case "topdown-2d":
+                        <div class="f-section-label">2D Top-Down</div>
+                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Arrow/WASD keys also work in viewport</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" 
+                                    @onmousedown="() => topdownRef?.MoveUp(true)" 
+                                    @onmouseup="() => topdownRef?.MoveUp(false)">▲ UP</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => topdownRef?.MoveLeft(true)" 
+                                    @onmouseup="() => topdownRef?.MoveLeft(false)">◄ LEFT</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => topdownRef?.MoveRight(true)" 
+                                    @onmouseup="() => topdownRef?.MoveRight(false)">► RIGHT</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" 
+                                    @onmousedown="() => topdownRef?.MoveDown(true)" 
+                                    @onmouseup="() => topdownRef?.MoveDown(false)">▼ DOWN</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => topdownRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    case "fighting-2d":
+                        <div class="f-section-label">Footsies Mechanics</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => fighterRef?.MoveLeft(true)" 
+                                    @onmouseup="() => fighterRef?.MoveLeft(false)">◄ BACK</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" 
+                                    @onmousedown="() => fighterRef?.MoveRight(true)" 
+                                    @onmouseup="() => fighterRef?.MoveRight(false)">► FORWARD</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => fighterRef?.P1Crouch()">CROUCH</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="flex:1" @onclick='() => fighterRef?.P1Poke("LIGHT")'>LIGHT ATTACK</button>
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick='() => fighterRef?.P1Poke("HEAVY")'>HEAVY ATTACK</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => fighterRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    case "fps-3d":
+                        <div class="f-section-label">3D FPS</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => fpsRef?.FireWeapon()">FIRE WEAPON</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => fpsRef!.KeyW = true" @onmouseup="() => fpsRef!.KeyW = false">MOVE FWD</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => fpsRef!.KeyS = true" @onmouseup="() => fpsRef!.KeyS = false">MOVE BACK</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => fpsRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    case "thirdperson-3d":
+                        <div class="f-section-label">3D Third-Person</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="flex:1" @onmousedown="() => tpRef!.KeyW = true" @onmouseup="() => tpRef!.KeyW = false">WALK</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef!.KeyW = false">STOP</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => tpRef!.IsOverShoulderPov = !tpRef!.IsOverShoulderPov">TOGGLE CAMERA POV</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef?.Orbit(-30)">◄ ORBIT</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef?.Orbit(30)">ORBIT ►</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => tpRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    /* COMBAT CONTROLS */
+                    case "hitscan":
+                        <div class="f-section-label">Hitscan System</div>
+                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Click canvas to aim · Use buttons to target</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(0)">FIRE → T1</button>
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(1)">FIRE → T2</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(2)">FIRE → T3</button>
+                            <button class="f-btn f-btn-yellow" style="flex:1" @onclick="() => hitscanRef?.AutoFire()">AUTO FIRE</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => hitscanRef?.Reset()">RESET TARGETS</button>
+                        </div>
+                        break;
+
+                    case "projectile":
+                        <div class="f-section-label">RigidBody Projectile</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => projectileRef?.SpawnProjectile()">FIRE PROJECTILE</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="TriggerRapidFire">RAPID FIRE (×3)</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => projectileRef?.Reset()">CLEAR ALL</button>
+                        </div>
+                        break;
+
+                    case "melee-hitbox":
+                        <div class="f-section-label">Melee Hitbox</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => meleeRef?.MoveLeft(true)" @onmouseup="() => meleeRef?.MoveLeft(false)">◄ MOVE LEFT</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => meleeRef?.MoveRight(true)" @onmouseup="() => meleeRef?.MoveRight(false)">MOVE RIGHT ►</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick='() => meleeRef?.Attack("LIGHT")'>LIGHT ATTACK</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="width:100%" @onclick='() => meleeRef?.Attack("HEAVY")'>HEAVY ATTACK</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => meleeRef?.Reset()">RESET</button>
+                        </div>
+                        break;
+
+                    /* SYSTEMS CONTROLS */
+                    case "grid-inventory":
+                        <div class="f-section-label">Grid Inventory</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="width:100%" @onclick="() => inventoryRef?.AddItem()">ADD ITEM</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="AddFiveItems">ADD × 5</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => inventoryRef?.ClearAll()">CLEAR ALL</button>
+                        </div>
+                        break;
+
+                    case "interact-prompt":
+                        <div class="f-section-label">Interactable Object</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="MoveInteractLeft">◄ MOVE LEFT</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="MoveInteractRight">MOVE RIGHT ►</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="width:100%" @onclick="TriggerInteract">[ E ] INTERACT</button>
+                        </div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetInteract">RESET</button>
+                        </div>
+                        break;
+
+                    case "day-night":
+                        <div class="f-section-label">Day / Night Cycle</div>
+                        <div class="f-row">
+                            <button class="f-btn f-btn-green" style="width:100%" @onclick="() => dayNightRef?.TogglePlay()">▶ PLAY / PAUSE</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;">
+                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.5)">☀ NOON</button>
+                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.0)">🌙 NIGHT</button>
+                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.25)">🌅 DAWN</button>
+                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.75)">🌆 DUSK</button>
+                        </div>
+                        <div class="f-section-label" style="margin-top: 6px;">Speed Multipliers</div>
+                        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(0.5)">0.5x</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(1.0)">1.0x</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(2.0)">2.0x</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(5.0)">5.0x</button>
+                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(10.0)">10x</button>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.001" value="@(dayNightRef?.CurrentTime ?? 0.25)" 
+                               @oninput="e => dayNightRef?.SetTime(Convert.ToDouble(e.Value))" style="width:100%; accent-color:#4ade80;" />
+                        break;
+                }
+            </div>
+
+            <!-- CODE OUTPUT -->
+            <div class="panel-header-line" style="border-top: 1px solid #161b18;">
+                <span class="panel-header-title">OUTPUT</span>
+                <span class="panel-header-meta">— Code & Guide</span>
+            </div>
+
+            <div class="output-section">
+                <div class="tab-nav">
+                    <button class="tab-nav-btn @(activeTab == "gdscript" ? "active" : "")" @onclick='() => activeTab = "gdscript"'>[GDScript]</button>
+                    <button class="tab-nav-btn @(activeTab == "csharp" ? "active" : "")" @onclick='() => activeTab = "csharp"'>[C#]</button>
+                    <button class="tab-nav-btn @(activeTab == "guide" ? "active" : "")" @onclick='() => activeTab = "guide"'>[Build Guide]</button>
+                </div>
+
+                <div class="code-wrapper">
+                    <button class="copy-button" @onclick="CopyCode"><span>📋</span> @copyText</button>
+                    @if (activeTab == "gdscript") { <div class="code-display"><pre><code>@selectedComponent.GDScript</code></pre></div> }
+                    else if (activeTab == "csharp") { <div class="code-display"><pre><code>@selectedComponent.CSharpScript</code></pre></div> }
+                    else {
+                        <div class="guide-container">
+                            <h5>SCENE TREE INSTRUCTIONS</h5>
+                            <pre>@selectedComponent.SceneTreeGuide</pre>
+                            <h5>SETUP STEPS</h5>
+                            <ol>@foreach (var s in selectedComponent.SetupSteps) { <li>@s</li> }</ol>
+                        </div>
+                    }
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <footer class="bottom-footer">
+        <span class="footer-center-tag">EQUINOX PRODUCTION</span>
+    </footer>
+</div>
+
+@code {
+    private List<ComponentCategory> categories = new();
+    private ComponentItem selectedComponent = new();
+    private string activeTab = "gdscript";
+    private string copyText = "COPY";
+
+    // Playable Component References
+    private PlatformerPreview? platformerRef;
+    private TopDownPreview? topdownRef;
+    private FightingPreview? fighterRef;
+    private FpsPreview? fpsRef;
+    private ThirdPersonPreview? tpRef;
+    private HitscanPreview? hitscanRef;
+    private ProjectilePreview? projectileRef;
+    private MeleePreview? meleeRef;
+    private InventoryPreview? inventoryRef;
+    private InteractablePreview? interactRef;
+    private DayNightPreview? dayNightRef;
+
+    // Linear Health Bar
+    private int targetHealth = 70;
+    private int maxHealth = 100;
+    private double displayHealth = 70.0;
+    private double displayGhost = 70.0;
+    private bool enableGhost = true;
+    private int linearSession = 0;
+
+    // Heart System (Max range: 5 to 30)
+    private int heartPoints = 10;
+    private int maxHearts = 5;
+
+    // Overhead Bar
+    private int overheadHealth = 100;
+
+    // Shield & Armor
+    private float actualShield = 50f;
+    private float actualShieldHealth = 100f;
+    private double displayShield = 50.0;
+    private double displayShieldHealth = 100.0;
+    private bool isShieldBroken = false;
+    private int shieldCooldown = 0;
+    private int damageHitSession = 0;
+    private int healthHealSession = 0;
+
+    // Menus & Settings
+    private int mainMenuIdx = 0;
+    private string menuStatus = "STANDBY";
+    private bool isGamePaused = true;
+
+    private float masterVol = 0.8f;
+    private float musicVol = 0.65f;
+    private float sfxVol = 0.9f;
+    private bool masterMute = false;
+    private bool musicMute = false;
+    private bool sfxMute = false;
+
+    private bool settingFullscreen = true;
+    private bool settingVsync = true;
+    private bool settingScreenShake = true;
+    private bool settingFps = false;
+    private bool settingCrt = true;
+
+    // HUD State
+    private int hudHealth = 100;
+    private int hudScore = 48200;
+    private float hudStamina = 85f;
+    private int hudCurrentAmmo = 24;
+    private int hudReserveAmmo = 30;
+    private bool hudFlash = false;
+    private int staminaSession = 0;
+
+    protected override void OnInitialized()
+    {
+        categories = ComponentRepository.GetCategories();
+        selectedComponent = categories[0].Items[0];
+    }
+
+    private void SelectComponent(ComponentItem item)
+    {
+        selectedComponent = item;
+    }
+
+    // Health logic
+    private async Task TriggerHealthDelta(int delta)
+    {
+        targetHealth = Math.Clamp(targetHealth + delta, 0, maxHealth);
+        int session = ++linearSession;
+
+        if (displayHealth < targetHealth)
+        {
+            while (displayHealth < targetHealth && session == linearSession)
+            {
+                displayHealth = Math.Min(targetHealth, displayHealth + 1.2);
+                displayGhost = displayHealth;
+                StateHasChanged();
+                await Task.Delay(16);
+            }
+        }
+        else if (displayHealth > targetHealth)
+        {
+            while (displayHealth > targetHealth && session == linearSession)
+            {
+                displayHealth = Math.Max(targetHealth, displayHealth - 1.8);
+                StateHasChanged();
+                await Task.Delay(16);
+            }
+
+            if (!enableGhost) { displayGhost = displayHealth; StateHasChanged(); return; }
+            await Task.Delay(800);
+
+            while (displayGhost > targetHealth && session == linearSession)
+            {
+                displayGhost = Math.Max(targetHealth, displayGhost - 0.7);
+                StateHasChanged();
+                await Task.Delay(16);
+            }
+        }
+    }
+
+    private async Task OnSliderInput(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int val))
+            await TriggerHealthDelta(val - targetHealth);
+    }
+
+    // Heart System adjustments (5 to 30 hearts bounds)
+    private void IncreaseMaxHearts()
+    {
+        if (maxHearts < 30)
+        {
+            maxHearts++;
+            heartPoints = Math.Min(maxHearts * 2, heartPoints + 2);
+        }
+    }
+
+    private void DecreaseMaxHearts()
+    {
+        if (maxHearts > 5)
+        {
+            maxHearts--;
+            heartPoints = Math.Min(maxHearts * 2, heartPoints);
+        }
+    }
+
+    private void ResetHearts()
+    {
+        maxHearts = 5;
+        heartPoints = 10;
+    }
+
+    // Shield logic
+    private async Task DamageShield()
+    {
+        float damage = 20f;
+        int thisDamageSession = ++damageHitSession;
+        isShieldBroken = true;
+        shieldCooldown = 4000;
+
+        if (actualShield > 0)
+        {
+            float overflow = damage - actualShield;
+            actualShield = Math.Max(0f, actualShield - damage);
+            if (overflow > 0) actualShieldHealth = Math.Max(0f, actualShieldHealth - overflow);
+        }
+        else
+        {
+            actualShieldHealth = Math.Max(0f, actualShieldHealth - damage);
+        }
+
+        while ((displayShield > actualShield || displayShieldHealth > actualShieldHealth) && thisDamageSession == damageHitSession)
+        {
+            if (displayShield > actualShield) displayShield = Math.Max(actualShield, displayShield - 1.5);
+            if (displayShieldHealth > actualShieldHealth) displayShieldHealth = Math.Max(actualShieldHealth, displayShieldHealth - 1.5);
+            StateHasChanged();
+            await Task.Delay(16);
+        }
+
+        while (shieldCooldown > 0 && thisDamageSession == damageHitSession)
+        {
+            await Task.Delay(100);
+            shieldCooldown -= 100;
+            StateHasChanged();
+        }
+
+        if (thisDamageSession == damageHitSession)
+        {
+            actualShield = 50f;
+            while (displayShield < actualShield && thisDamageSession == damageHitSession)
+            {
+                displayShield = Math.Min(actualShield, displayShield + 0.6);
+                StateHasChanged();
+                await Task.Delay(16);
+            }
+            isShieldBroken = false;
+        }
+    }
+
+    private async Task HealShieldHealth()
+    {
+        actualShieldHealth = Math.Min(100f, actualShieldHealth + 20f);
+        int thisHealSession = ++healthHealSession;
+
+        while (displayShieldHealth < actualShieldHealth && thisHealSession == healthHealSession)
+        {
+            displayShieldHealth = Math.Min(actualShieldHealth, displayShieldHealth + 1.2);
+            StateHasChanged();
+            await Task.Delay(16);
+        }
+    }
+
+    private void ResetShield()
+    {
+        actualShield = 50f;
+        actualShieldHealth = 100f;
+        displayShield = 50.0;
+        displayShieldHealth = 100.0;
+        isShieldBroken = false;
+        shieldCooldown = 0;
+    }
+
+    // Main Menu logic
+    private void OnMainMenuOptionClicked(int idx)
+    {
+        mainMenuIdx = idx;
+        menuStatus = idx switch
+        {
+            0 => "NEW GAME INITIALIZED",
+            1 => "LOAD ARCHIVES READY",
+            2 => "SETTINGS OPEN",
+            3 => "APPLICATION TERMINATED",
+            _ => "STANDBY"
+        };
+    }
+
+    private void TriggerMenuAction(string action)
+    {
+        menuStatus = action;
+        mainMenuIdx = action switch
+        {
+            "NEW GAME" => 0,
+            "LOAD GAME" => 1,
+            "SETTINGS" => 2,
+            "QUIT" => 3,
+            _ => 0
+        };
+    }
+
+    // HUD logic
+    private async Task TakeHudHit()
+    {
+        hudHealth = Math.Max(0, hudHealth - 20);
+        hudFlash = true;
+        StateHasChanged();
+        await Task.Delay(200);
+        hudFlash = false;
+        StateHasChanged();
+    }
+
+    private void FireWeapon()
+    {
+        if (hudCurrentAmmo > 0) hudCurrentAmmo--;
+    }
+
+    private async Task ConsumeHudStamina()
+    {
+        hudStamina = Math.Max(0f, hudStamina - 25f);
+        int curSession = ++staminaSession;
+        StateHasChanged();
+
+        await Task.Delay(1200);
+        while (hudStamina < 100f && curSession == staminaSession)
+        {
+            hudStamina = Math.Min(100f, hudStamina + 1.5f);
+            StateHasChanged();
+            await Task.Delay(20);
+        }
+    }
+
+    private void ResetHud()
+    {
+        hudHealth = 100;
+        hudScore = 48200;
+        hudStamina = 85f;
+        hudCurrentAmmo = 24;
+        hudReserveAmmo = 30;
+    }
+
+    // Interactable helpers
+    private void MoveInteractLeft() { interactRef?.MoveLeft(); StateHasChanged(); }
+    private void MoveInteractRight() { interactRef?.MoveRight(); StateHasChanged(); }
+    private void TriggerInteract() { interactRef?.Interact(); StateHasChanged(); }
+    private void ResetInteract() { interactRef?.Reset(); StateHasChanged(); }
+
+    // Projectile & Inventory helpers
+    private async Task TriggerRapidFire()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            projectileRef?.SpawnProjectile();
+            await Task.Delay(140);
+        }
+    }
+
+    private async Task AddFiveItems()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            inventoryRef?.AddItem();
+            await Task.Delay(40);
+        }
+    }
+
+    // Unified Global Keyboard Handler
+    private void HandleGlobalKeydown(KeyboardEventArgs e)
+    {
+        // 1. Universal ESC Toggle for Pause Menu
+        if (e.Key.Equals("Escape", StringComparison.OrdinalIgnoreCase))
+        {
+            isGamePaused = !isGamePaused;
+            StateHasChanged();
+            return;
+        }
+
+        // 2. Main Menu Navigation (W / S / Up / Down / Enter)
+        if (selectedComponent.Id == "main-menu")
+        {
+            if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase))
+            {
+                mainMenuIdx = (mainMenuIdx - 1 + 4) % 4;
+                OnMainMenuOptionClicked(mainMenuIdx);
+                StateHasChanged();
+                return;
+            }
+            else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowDown", StringComparison.OrdinalIgnoreCase))
+            {
+                mainMenuIdx = (mainMenuIdx + 1) % 4;
+                OnMainMenuOptionClicked(mainMenuIdx);
+                StateHasChanged();
+                return;
+            }
+            else if (e.Key.Equals("Enter", StringComparison.OrdinalIgnoreCase))
+            {
+                OnMainMenuOptionClicked(mainMenuIdx);
+                StateHasChanged();
+                return;
+            }
+        }
+
+        // 3. Component-specific keys
+        switch (selectedComponent.Id)
+        {
+            case "interact-prompt":
+                if (e.Key.Equals("e", StringComparison.OrdinalIgnoreCase)) { interactRef?.Interact(); StateHasChanged(); }
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase)) { interactRef?.MoveLeft(); StateHasChanged(); }
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase)) { interactRef?.MoveRight(); StateHasChanged(); }
+                break;
+
+            case "fighting-2d":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) fighterRef?.MoveLeft(true);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) fighterRef?.MoveRight(true);
+                else if (e.Key.Equals("j", StringComparison.OrdinalIgnoreCase)) fighterRef?.P1Poke("LIGHT");
+                else if (e.Key.Equals("k", StringComparison.OrdinalIgnoreCase)) fighterRef?.P1Poke("HEAVY");
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) fighterRef?.P1Crouch();
+                break;
+
+            case "fps-3d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyW = true;
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyS = true;
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyA = true;
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyD = true;
+                else if (e.Key.Equals(" ")) fpsRef?.Jump();
+                break;
+
+            case "thirdperson-3d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyW = true;
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyS = true;
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyA = true;
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyD = true;
+                else if (e.Key.Equals("q", StringComparison.OrdinalIgnoreCase)) tpRef?.Orbit(-20);
+                else if (e.Key.Equals("e", StringComparison.OrdinalIgnoreCase)) tpRef?.Orbit(20);
+                break;
+
+            case "platformer-2d":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase)) platformerRef?.MoveLeft(true);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase)) platformerRef?.MoveRight(true);
+                else if (e.Key.Equals(" ") || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("w", StringComparison.OrdinalIgnoreCase)) platformerRef?.TriggerJump();
+                break;
+
+            case "topdown-2d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveUp(true);
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowDown", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveDown(true);
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveLeft(true);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveRight(true);
+                break;
+
+            case "melee-hitbox":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) meleeRef?.MoveLeft(true);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) meleeRef?.MoveRight(true);
+                else if (e.Key.Equals("j", StringComparison.OrdinalIgnoreCase)) meleeRef?.Attack("LIGHT");
+                else if (e.Key.Equals("k", StringComparison.OrdinalIgnoreCase)) meleeRef?.Attack("HEAVY");
+                else if (e.Key.Equals(" ")) meleeRef?.Jump();
+                break;
+        }
+    }
+
+    private void HandleGlobalKeyup(KeyboardEventArgs e)
+    {
+        switch (selectedComponent.Id)
+        {
+            case "fighting-2d":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) fighterRef?.MoveLeft(false);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) fighterRef?.MoveRight(false);
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) fighterRef?.P1Neutral();
+                break;
+
+            case "fps-3d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyW = false;
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyS = false;
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyA = false;
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) fpsRef!.KeyD = false;
+                break;
+
+            case "thirdperson-3d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyW = false;
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyS = false;
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyA = false;
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) tpRef!.KeyD = false;
+                break;
+
+            case "platformer-2d":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase)) platformerRef?.MoveLeft(false);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase)) platformerRef?.MoveRight(false);
+                break;
+
+            case "topdown-2d":
+                if (e.Key.Equals("w", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveUp(false);
+                else if (e.Key.Equals("s", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowDown", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveDown(false);
+                else if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveLeft(false);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase)) topdownRef?.MoveRight(false);
+                break;
+
+            case "melee-hitbox":
+                if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase)) meleeRef?.MoveLeft(false);
+                else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase)) meleeRef?.MoveRight(false);
+                break;
+        }
+    }
+
+    private async Task CopyCode()
+    {
+        string rawCode = activeTab switch
+        {
+            "csharp" => selectedComponent.CSharpScript,
+            "guide" => $"{selectedComponent.SceneTreeGuide}\n\nSETUP STEPS:\n" + string.Join("\n", selectedComponent.SetupSteps),
+            _ => selectedComponent.GDScript
+        };
+
+        try
+        {
+            await JS.InvokeVoidAsync("eval", $"navigator.clipboard.writeText({System.Text.Json.JsonSerializer.Serialize(rawCode)})");
+            copyText = "COPIED!";
+            StateHasChanged();
+            await Task.Delay(1400);
+            copyText = "COPY";
+            StateHasChanged();
+        }
+        catch
+        {
+            copyText = "FAILED!";
+            StateHasChanged();
+            await Task.Delay(1400);
+            copyText = "COPY";
+            StateHasChanged();
+        }
+    }
+}

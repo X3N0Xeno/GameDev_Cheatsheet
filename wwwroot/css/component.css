@@ -1,0 +1,1187 @@
+/* ========================================================
+   COMMON BAR META
+======================================================== */
+.bar-meta-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.hp-label { color: #2ee586; }
+.hp-values { color: #b0bac5; }
+
+/* ========================================================
+   1. LINEAR HEALTH BAR
+======================================================== */
+.linear-bar-container {
+    width: 100%;
+    height: 48px;
+    background-color: #101312;
+    border: 1px solid #27312c;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.bar-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+}
+
+.ghost-layer {
+    background: linear-gradient(180deg, #e5aa33 0%, #b88219 100%);
+    z-index: 1;
+}
+
+.health-layer {
+    background: linear-gradient(180deg, #e53935 0%, #b71c1c 100%);
+    z-index: 2;
+}
+
+.bar-divisions-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+        to right,
+        transparent 0%,
+        transparent calc(20% - 1px),
+        rgba(0, 0, 0, 0.45) calc(20% - 1px),
+        rgba(255, 255, 255, 0.08) 20%
+    );
+    border-right: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.bar-center-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.28);
+    font-weight: bold;
+    z-index: 4;
+    pointer-events: none;
+    line-height: 48px;
+}
+
+.legend-row {
+    width: 100%;
+    display: flex;
+    gap: 18px;
+    margin-top: 10px;
+    font-size: 10.5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 1px;
+}
+
+.swatch-current { background-color: #e53935; }
+.swatch-ghost { background-color: #e5aa33; }
+
+/* ========================================================
+   2. SEGMENTED HEARTS
+======================================================== */
+.hearts-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.heart-box {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.heart-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+}
+
+.heart-empty path { fill: #1a231e; }
+.heart-filled path {
+    fill: #e53935;
+    filter: drop-shadow(0 2px 5px rgba(229, 57, 53, 0.5));
+}
+
+.heart-clip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 36px;
+    overflow: hidden;
+}
+
+.hearts-matrix-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-start;
+    max-width: 480px;
+    padding: 16px 0;
+    margin: 0 auto;
+}
+
+.clip-full { width: 36px; }
+.clip-half { width: 18px; }
+
+/* ========================================================
+   3. FLOATING OVERHEAD BAR
+======================================================== */
+.entity-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.overhead-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.overhead-bar-frame {
+    width: 150px;
+    height: 14px;
+    background-color: #101312;
+    border: 1px solid #27312c;
+    position: relative;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.overhead-fill {
+    height: 100%;
+    background: #e53935;
+    transition: width 0.15s ease;
+}
+
+.entity-avatar {
+    width: 68px;
+    height: 68px;
+    background-color: #1a231e;
+    border: 2px solid #2ee586;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+}
+
+/* ========================================================
+   4. SHIELD & ARMOR LAYER
+======================================================== */
+.shield-health-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 580px;
+}
+
+.stacked-bar-frame {
+    width: 100%;
+    height: 32px;
+    background-color: #101312;
+    border: 1px solid #27312c;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
+}
+
+.shield-fill {
+    height: 100%;
+    background: linear-gradient(180deg, #00d2ff 0%, #0077b6 100%);
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);
+}
+
+.shield-meta-regen {
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+    color: #58a6ff;
+    font-weight: normal;
+}
+
+/* ========================================================
+   5. MAIN MENU HUB
+======================================================== */
+.menu-preview-stage {
+    width: 100%;
+    height: 400px;
+    background: radial-gradient(circle at center, #141b18 0%, #080a09 100%);
+    border: 1px solid #1c221f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+}
+
+.menu-window {
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+}
+
+.menu-super {
+    font-size: 9.5px;
+    letter-spacing: 3px;
+    color: #2ee586;
+    font-weight: bold;
+}
+
+.menu-main-title {
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: #ffffff;
+    margin: 4px 0;
+    font-weight: 900;
+}
+
+.menu-sub {
+    font-size: 9px;
+    color: #627269;
+    letter-spacing: 1px;
+}
+
+.menu-button-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.retro-menu-btn {
+    background-color: #101513;
+    border: 1px solid #232c27;
+    color: #a4b0a8;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    transition: all 0.12s ease;
+}
+
+.retro-menu-btn:hover, .retro-menu-btn.active {
+    background-color: #172820;
+    border-color: #2ee586;
+    color: #2ee586;
+    box-shadow: 0 0 10px rgba(46, 229, 134, 0.15);
+}
+
+.btn-cursor {
+    color: #2ee586;
+    width: 20px;
+}
+
+.menu-status-bar {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: #627269;
+    border-top: 1px solid #1c221f;
+    padding-top: 8px;
+}
+
+/* ========================================================
+   6. PAUSE OVERLAY
+======================================================== */
+.pause-preview-stage {
+    width: 100%;
+    height: 400px;
+    position: relative;
+    background-color: #0b0e0c;
+    border: 1px solid #1c221f;
+    overflow: hidden;
+}
+
+.background-game-freeze {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.frozen-entity {
+    font-size: 42px;
+    filter: grayscale(0.6) blur(0.5px);
+}
+
+.freeze-tag {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    font-size: 9.5px;
+    color: #43544b;
+    letter-spacing: 1px;
+}
+
+.pause-modal-dimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(5, 7, 6, 0.85);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.pause-box {
+    width: 320px;
+    background-color: #0d120f;
+    border: 1px solid #28372e;
+    padding: 20px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.8);
+}
+
+.pause-header {
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.pause-badge {
+    font-size: 9px;
+    color: #e5aa33;
+    letter-spacing: 2px;
+}
+
+.pause-header h3 {
+    font-size: 16px;
+    color: #ffffff;
+    margin-top: 4px;
+}
+
+.pause-footer {
+    margin-top: 14px;
+    font-size: 9px;
+    color: #55665c;
+    text-align: center;
+}
+
+.unpaused-banner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #121815;
+    border: 1px solid #2ee586;
+    color: #2ee586;
+    padding: 12px 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* ========================================================
+   7. SETTINGS / AUDIO MIXER (AUTHENTIC VERTICAL FADERS)
+======================================================== */
+.audio-mixer-stage {
+    width: 100%;
+    height: 400px;
+    background-color: #080a09;
+    border: 1px solid #1c221f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-split-board {
+    display: flex;
+    gap: 32px;
+    background-color: #0d120f;
+    padding: 26px 34px;
+    border: 1px solid #232c27;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 660px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.settings-column {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.settings-divider {
+    width: 1px;
+    background-color: #1c2520;
+}
+
+.audio-column {
+    flex: 1.3;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.settings-column-header {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #2ee586;
+    font-weight: bold;
+    border-bottom: 1px solid #1c2520;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.setting-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.toggle-name {
+    font-size: 10px;
+    color: #98a89f;
+    font-weight: 600;
+}
+
+.retro-check {
+    accent-color: #2ee586;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
+
+/* DUAL VU METER AND VERTICAL FADER STRIP */
+.mixer-board-inner {
+    display: flex;
+    gap: 26px;
+    justify-content: center;
+    align-items: flex-end;
+    padding-top: 6px;
+}
+
+.bus-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.fader-slot-pair {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #090c0a;
+    padding: 8px 6px;
+    border: 1px solid #1c2520;
+    border-radius: 3px;
+}
+
+/* Peak Meter */
+.bus-meter {
+    width: 10px;
+    height: 120px;
+    background-color: #060706;
+    border: 1px solid #171d1a;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+}
+
+.meter-bar {
+    width: 100%;
+    background: linear-gradient(0deg, #2ee586 0%, #e5aa33 70%, #e53935 100%);
+    transition: height 0.08s ease;
+}
+
+.meter-bar.music {
+    background: linear-gradient(0deg, #00d2ff 0%, #0077b6 100%);
+}
+
+.meter-bar.sfx {
+    background: linear-gradient(0deg, #b392f0 0%, #7928ca 100%);
+}
+
+/* Guaranteed Cross-Browser Vertical Range Slider */
+.vertical-slider {
+    -webkit-appearance: slider-vertical !important;
+    appearance: slider-vertical !important;
+    writing-mode: vertical-lr !important;
+    direction: rtl !important;
+    width: 16px !important;
+    height: 120px !important;
+    accent-color: #2ee586;
+    cursor: pointer;
+    background: transparent;
+}
+
+.bus-name {
+    font-size: 10px;
+    font-weight: bold;
+    color: #2ee586;
+    letter-spacing: 0.5px;
+}
+
+.bus-db {
+    font-size: 9.5px;
+    color: #8fa298;
+    font-family: monospace;
+}
+
+.bus-mute-btn {
+    width: 24px;
+    height: 20px;
+    background-color: #171d1a;
+    border: 1px solid #28372e;
+    color: #8fa298;
+    font-size: 9.5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.bus-mute-btn.muted {
+    background-color: #7c2626;
+    border-color: #e53935;
+    color: #ffffff;
+}
+
+/* ========================================================
+   8. HUD OVERLAY (PINNED FULL VIEWPORT CONTAINER)
+======================================================== */
+.hud-preview-stage {
+    width: 100%;
+    height: 400px;
+    position: relative;
+    background-color: #070908;
+    border: 1px solid #1c221f;
+    overflow: hidden;
+}
+
+.hud-radar-grid {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at center, rgba(46, 229, 134, 0.05) 0%, transparent 70%),
+        linear-gradient(to right, #101512 1px, transparent 1px),
+        linear-gradient(to bottom, #101512 1px, transparent 1px);
+    background-size: 100% 100%, 28px 28px, 28px 28px;
+}
+
+.hud-anchor {
+    position: absolute !important;
+    z-index: 10;
+}
+
+.hud-anchor.top-left {
+    top: 18px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hud-anchor.top-right {
+    top: 18px;
+    right: 20px;
+    text-align: right;
+}
+
+.hud-anchor.bottom-left {
+    bottom: 20px;
+    left: 20px;
+    width: 240px;
+}
+
+.hud-anchor.bottom-right {
+    bottom: 20px;
+    right: 20px;
+    text-align: right;
+}
+
+.radar-box {
+    width: 56px;
+    height: 56px;
+    border: 1.5px solid #2ee586;
+    border-radius: 50%;
+    position: relative;
+    background-color: rgba(18, 38, 28, 0.45);
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(46, 229, 134, 0.2);
+}
+
+.radar-sweep {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(46, 229, 134, 0.5) 0deg, transparent 60deg);
+    animation: radarSweep 2.5s linear infinite;
+}
+
+@keyframes radarSweep {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.radar-blip {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+}
+.radar-blip.b1 { top: 14px; left: 32px; background-color: #ff3b30; box-shadow: 0 0 6px #ff3b30; }
+.radar-blip.b2 { bottom: 18px; right: 14px; background-color: #2ee586; box-shadow: 0 0 6px #2ee586; }
+
+.mission-tag {
+    font-size: 10px;
+    color: #2ee586;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.hud-score-counter {
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.hud-mult-tag {
+    font-size: 9.5px;
+    color: #e5aa33;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.hud-stat-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5px;
+    color: #2ee586;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.hud-meter-frame {
+    width: 100%;
+    height: 10px;
+    background-color: #0f1412;
+    border: 1px solid #232c27;
+    overflow: hidden;
+}
+
+.hud-meter-fill {
+    height: 100%;
+    transition: width 0.15s ease;
+}
+
+.health-fill { background: linear-gradient(90deg, #e53935 0%, #b71c1c 100%); }
+.stamina-fill { background: linear-gradient(90deg, #2ee586 0%, #209959 100%); }
+
+.hud-weapon-title {
+    font-size: 10px;
+    color: #627269;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+.hud-ammo-digits {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.ammo-current { color: #2ee586; }
+.ammo-sep { color: #3e4d44; margin: 0 4px; }
+.ammo-mag { color: #8fa298; font-size: 18px; }
+
+.hud-damage-flash {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(229, 57, 53, 0.35);
+    box-shadow: inset 0 0 60px rgba(229, 57, 53, 0.8);
+    pointer-events: none;
+    z-index: 25;
+    animation: flashFade 0.35s ease-out forwards;
+}
+
+@keyframes flashFade {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ========================================================
+   PLAYER MOVEMENT VIEWPORT STYLES
+======================================================== */
+.movement-canvas {
+    width: 100%;
+    height: 400px;
+    background-color: #070908;
+    border: 1px solid #1c221f;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+}
+
+.physics-telemetry {
+    position: absolute;
+    bottom: 12px;
+    left: 14px;
+    display: flex;
+    gap: 16px;
+    font-size: 9.5px;
+    color: #2ee586;
+    background: rgba(7, 10, 8, 0.85);
+    padding: 4px 10px;
+    border: 1px solid #1c2520;
+    border-radius: 2px;
+    z-index: 20;
+    font-family: monospace;
+}
+
+/* 1. PLATFORMER 2D */
+.platformer-arena {
+    background-image: 
+        linear-gradient(to right, #101512 1px, transparent 1px),
+        linear-gradient(to bottom, #101512 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+.ground-platform {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 18px;
+    background-color: #17221b;
+    border-top: 2px solid #2ee586;
+}
+
+.floating-platform {
+    position: absolute;
+    background-color: #16201a;
+    border-top: 2px solid #2ee586;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.floating-platform.p1 { bottom: 90px; left: 180px; width: 120px; }
+.floating-platform.p2 { bottom: 150px; left: 360px; width: 140px; }
+
+.platformer-player {
+    position: absolute;
+    width: 34px;
+    height: 38px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    transition: left 0.08s linear, bottom 0.05s ease-out;
+    z-index: 10;
+}
+
+.player-icon {
+    font-size: 26px;
+}
+
+.player-shadow {
+    width: 20px;
+    height: 4px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    margin-top: 2px;
+}
+
+/* 2. TOP-DOWN 2D */
+.topdown-arena {
+    background-image: radial-gradient(#151e19 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.topdown-player {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background-color: #121c16;
+    border: 2px solid #2ee586;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.7);
+    transition: left 0.1s linear, top 0.1s linear, transform 0.08s ease;
+    z-index: 10;
+}
+
+.topdown-facing-nozzle {
+    position: absolute;
+    top: 50%;
+    right: -8px;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 6px;
+    background-color: #2ee586;
+    border-radius: 2px;
+}
+
+.topdown-avatar { font-size: 20px; }
+
+.reticle-target {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border: 1px dashed rgba(46, 229, 134, 0.4);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+/* 3. FIGHTING GAME 2D */
+.fighting-arena {
+    background: linear-gradient(180deg, #090e0b 0%, #111a14 100%);
+    display: flex;
+    align-items: flex-end;
+}
+
+.fighting-floor {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 24px;
+    background-color: #1a251f;
+    border-top: 2px solid #e5aa33;
+}
+
+.fighter-p1, .fighter-dummy {
+    position: absolute;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: left 0.08s ease;
+}
+
+.fighter-sprite {
+    font-size: 48px;
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+}
+
+.state-label {
+    font-size: 9px;
+    font-weight: bold;
+    color: #2ee586;
+    background: #090e0b;
+    border: 1px solid #1c2520;
+    padding: 2px 6px;
+    margin-top: 4px;
+    border-radius: 2px;
+}
+
+.state-label.dummy { color: #8fa298; }
+
+.attack-hitbox-debug {
+    position: absolute;
+    right: -40px;
+    top: 15px;
+    background-color: rgba(229, 57, 53, 0.35);
+    border: 1px dashed #e53935;
+    color: #ff8585;
+    font-size: 8px;
+    padding: 2px 4px;
+    font-weight: bold;
+}
+
+/* 4. 3D FPS ARENA */
+.fps-arena {
+    perspective: 800px;
+}
+
+.fps-view-frustum {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.05s ease-out;
+}
+
+.wall {
+    position: absolute;
+    background-color: #0d1410;
+    border: 1px solid #1d2a22;
+}
+
+.back-wall { width: 100%; height: 100%; transform: translateZ(-350px); }
+.left-wall { width: 500px; height: 100%; transform: rotateY(90deg) translateZ(-250px); }
+.right-wall { width: 500px; height: 100%; transform: rotateY(-90deg) translateZ(-400px); }
+
+.floor-grid {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 400px;
+    transform: rotateX(90deg) translateZ(100px);
+    background-image: linear-gradient(#152219 1px, transparent 1px), linear-gradient(90deg, #152219 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.floating-crate {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: #19271e;
+    border: 1px solid #2ee586;
+}
+.floating-crate.c1 { top: 180px; left: 240px; transform: translateZ(-200px); }
+.floating-crate.c2 { top: 120px; right: 200px; transform: translateZ(-280px); }
+
+.fps-weapon-rig {
+    position: absolute;
+    bottom: -10px;
+    right: 120px;
+    font-size: 64px;
+    z-index: 15;
+    pointer-events: none;
+    transform-origin: bottom center;
+}
+
+.fps-weapon-rig.bobbing {
+    animation: weaponBob 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes weaponBob {
+    from { transform: translateY(0) rotate(0deg); }
+    to { transform: translateY(-8px) rotate(-2deg); }
+}
+
+.fps-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+.ch-h { position: absolute; top: 7px; left: 0; width: 16px; height: 2px; background: #2ee586; }
+.ch-v { position: absolute; top: 0; left: 7px; width: 2px; height: 16px; background: #2ee586; }
+
+/* 5. 3D THIRD PERSON ARENA */
+.tp-arena {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tp-stage {
+    width: 400px;
+    height: 400px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.08s linear;
+}
+
+.tp-ground-plane {
+    width: 100%;
+    height: 100%;
+    background-color: #0b110e;
+    border: 2px solid #1e2c24;
+    background-image: radial-gradient(#1c2c22 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.tp-character {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-style: preserve-3d;
+    transition: transform 0.08s ease;
+}
+
+.character-mesh {
+    font-size: 38px;
+    transform: translateY(-20px);
+}
+
+.cam-orbit-ray {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: 80px;
+    background: dashed rgba(46, 229, 134, 0.4);
+    transform: rotateX(90deg);
+}
+
+.tp-pillar {
+    position: absolute;
+    width: 30px;
+    height: 60px;
+    background: #141f18;
+    border: 1px solid #2ee586;
+}
+.tp-pillar.pil1 { top: 60px; left: 80px; }
+.tp-pillar.pil2 { bottom: 80px; right: 90px; }
+
+/* ========================================================
+   AUTHENTIC FIGMA VIEWPORT SHELL & INSPECTOR PALETTE
+======================================================== */
+.viewport-shell-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    background: #101210;
+    min-height: 380px;
+}
+
+.viewport-shell-box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: 
+        linear-gradient(rgba(42,58,40,0.12) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(42,58,40,0.12) 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+.viewport-shell-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+
+.shell-label {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: #4a6a48;
+    text-transform: uppercase;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.shell-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+    padding: 36px 16px 16px;
+}
+
+/* EXACT FIGMA BUTTON PALETTE (InspectorControls.tsx) */
+.f-btn {
+    padding: 7px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.1s;
+}
+
+.f-btn:hover {
+    filter: brightness(1.18);
+}
+
+.f-btn-green {
+    background: linear-gradient(180deg,#1a6e32,#0f4820);
+    border: 1px solid #2a9a44;
+    color: #7fffa0;
+}
+
+.f-btn-red {
+    background: linear-gradient(180deg,#7a1414,#4a0808);
+    border: 1px solid #b82a2a;
+    color: #ffaaaa;
+}
+
+.f-btn-yellow {
+    background: linear-gradient(180deg,#5a4014,#382808);
+    border: 1px solid #a87828;
+    color: #ffd07a;
+}
+
+.f-btn-blue {
+    background: linear-gradient(180deg,#143a5a,#0a2038);
+    border: 1px solid #2a6898;
+    color: #7ac8ff;
+}
+
+.f-btn-gray {
+    background: linear-gradient(180deg,#1e281e,#141a14);
+    border: 1px solid #2a3828;
+    color: #7a8a72;
+}
+
+.f-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.56rem;
+    letter-spacing: 0.1em;
+    color: #3a5038;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+    margin-top: 2px;
+}
+
+.f-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}

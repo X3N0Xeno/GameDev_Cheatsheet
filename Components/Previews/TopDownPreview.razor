@@ -1,0 +1,148 @@
+@implements IDisposable
+
+<div class="viewport-shell-box">
+    <div class="shell-label">TOP_DOWN_CONTROLLER_2D.gd — PURE C# ENGINE</div>
+    <div class="shell-content">
+        <div style="position: relative; width: 460px; height: 260px; background: #080c08; border: 1px solid #1a2a1a; overflow: hidden;">
+            <svg width="460" height="260" style="position: absolute; inset: 0;">
+                <defs>
+                    <pattern id="tdGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                        <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#0e140e" stroke-width="0.5" />
+                    </pattern>
+                </defs>
+                <rect width="460" height="260" fill="url(#tdGrid)" />
+
+                <!-- Walls -->
+                @foreach (var w in walls)
+                {
+                    <rect x="@w.X" y="@w.Y" width="@w.W" height="@w.H" fill="#1a2a1a" />
+                    <line x1="@w.X" y1="@w.Y" x2="@(w.X + w.W)" y2="@w.Y" stroke="#2a4a2a" stroke-width="2" />
+                    <line x1="@w.X" y1="@w.Y" x2="@w.X" y2="@(w.Y + w.H)" stroke="#2a4a2a" stroke-width="2" />
+                }
+
+                <!-- Direction Ray -->
+                @if (isMoving)
+                {
+                    <line x1="@x" y1="@y" x2="@(x + Math.Cos(angle) * 26)" y2="@(y + Math.Sin(angle) * 26)"
+                          stroke="#2a4a2a" stroke-width="1" stroke-dasharray="3 3" />
+                }
+
+                <!-- Player Avatar -->
+                <g transform="translate(@x, @y) rotate(@((angle + Math.PI / 2.0) * (180.0 / Math.PI)))">
+                    <rect x="-7" y="-10" width="14" height="20" fill="#4ade80" />
+                    <rect x="-2" y="-10" width="4" height="6" fill="#0d0f0d" />
+                </g>
+
+                <!-- 8-Direction Compass Matrix (Rendered via MarkupString to prevent Razor <text> collision) -->
+                @foreach (var d in compassDirs)
+                {
+                    bool act = Math.Round(inputX) == d.Dx && Math.Round(inputY) == d.Dy;
+                    string col = act ? "#4ade80" : "#2a3a28";
+                    int posX = 460 - 44 + d.Dx * 14;
+                    int posY = 42 + d.Dy * 14;
+                    @((MarkupString)$"<text x='{posX}' y='{posY}' fill='{col}' font-family=\"'Share Tech Mono', monospace\" font-size='11' text-anchor='middle'>{d.Glyph}</text>")
+                }
+            </svg>
+        </div>
+    </div>
+</div>
+
+@code {
+    private record Wall(double X, double Y, double W, double H);
+    private readonly List<Wall> walls = new()
+    {
+        new(50, 50, 80, 12),
+        new(200, 80, 12, 80),
+        new(100, 170, 100, 12),
+        new(30, 120, 12, 70),
+        new(280, 50, 12, 60),
+        new(350, 130, 80, 12)
+    };
+
+    private record CompassDir(int Dx, int Dy, string Glyph);
+    private readonly List<CompassDir> compassDirs = new()
+    {
+        new(-1, -1, "↖"), new(0, -1, "↑"), new(1, -1, "↗"),
+        new(-1, 0, "←"),  new(0, 0, "·"),  new(1, 0, "→"),
+        new(-1, 1, "↙"),  new(0, 1, "↓"),  new(1, 1, "↘")
+    };
+
+    private double x = 140;
+    private double y = 110;
+    private double angle = 0;
+    private double inputX = 0;
+    private double inputY = 0;
+    private bool isMoving => inputX != 0 || inputY != 0;
+
+    public bool KeyUp { get; set; }
+    public bool KeyDown { get; set; }
+    public bool KeyLeft { get; set; }
+    public bool KeyRight { get; set; }
+
+    private const double SPEED = 160;
+    private CancellationTokenSource cts = new();
+
+    protected override void OnInitialized()
+    {
+        _ = RunLoopAsync(cts.Token);
+    }
+
+    private async Task RunLoopAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        DateTime lastTime = DateTime.UtcNow;
+
+        while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+        {
+            DateTime now = DateTime.UtcNow;
+            double dt = Math.Min((now - lastTime).TotalSeconds, 0.05);
+            lastTime = now;
+
+            double ix = 0, iy = 0;
+            if (KeyLeft) ix -= 1;
+            if (KeyRight) ix += 1;
+            if (KeyUp) iy -= 1;
+            if (KeyDown) iy += 1;
+
+            double len = Math.Sqrt(ix * ix + iy * iy);
+            if (len > 0)
+            {
+                ix /= len;
+                iy /= len;
+                angle = Math.Atan2(iy, ix);
+            }
+
+            inputX = ix;
+            inputY = iy;
+
+            double nx = x + ix * SPEED * dt;
+            double ny = y + iy * SPEED * dt;
+
+            foreach (var w in walls)
+            {
+                if (nx + 10 > w.X && nx - 10 < w.X + w.W && ny + 10 > w.Y && ny - 10 < w.Y + w.H)
+                {
+                    nx = x;
+                    ny = y;
+                }
+            }
+
+            x = Math.Clamp(nx, 12, 460 - 12);
+            y = Math.Clamp(ny, 12, 260 - 12);
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void MoveUp(bool down) => KeyUp = down;
+    public void MoveDown(bool down) => KeyDown = down;
+    public void MoveLeft(bool down) => KeyLeft = down;
+    public void MoveRight(bool down) => KeyRight = down;
+    public void Reset() { x = 140; y = 110; }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

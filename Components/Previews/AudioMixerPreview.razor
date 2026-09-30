@@ -1,0 +1,144 @@
+<div class="audio-mixer-stage">
+    <div class="settings-split-board">
+        <!-- LEFT: DISPLAY & SYSTEM PRESETS -->
+        <div class="settings-column">
+            <div class="settings-column-header">DISPLAY & SYSTEM PRESETS</div>
+
+            <div class="setting-toggle-row">
+                <span class="toggle-name">FULLSCREEN MODE</span>
+                <input type="checkbox" class="retro-check" checked="@Fullscreen" @onchange="ToggleFullscreen" />
+            </div>
+
+            <div class="setting-toggle-row">
+                <span class="toggle-name">VSYNC BUFFER</span>
+                <input type="checkbox" class="retro-check" checked="@Vsync" @onchange="ToggleVsync" />
+            </div>
+
+            <div class="setting-toggle-row">
+                <span class="toggle-name">SCREEN SHAKE INTENSITY</span>
+                <input type="checkbox" class="retro-check" checked="@ScreenShake" @onchange="ToggleScreenShake" />
+            </div>
+
+            <div class="setting-toggle-row">
+                <span class="toggle-name">OVERLAY FPS MONITOR</span>
+                <input type="checkbox" class="retro-check" checked="@FpsCounter" @onchange="ToggleFpsCounter" />
+            </div>
+
+            <div class="setting-toggle-row">
+                <span class="toggle-name">CRT SCANLINE FILTER</span>
+                <input type="checkbox" class="retro-check" checked="@CrtFilter" @onchange="ToggleCrtFilter" />
+            </div>
+        </div>
+
+        <div class="settings-divider"></div>
+
+        <!-- RIGHT: AUDIO BUSES WITH PEAK METERS -->
+        <div class="audio-column">
+            <div class="settings-column-header">AUDIO BUS MIXER (dB)</div>
+            
+            <div class="mixer-board-inner">
+                <!-- MASTER -->
+                <div class="bus-column">
+                    <div class="fader-slot-pair">
+                        <div class="bus-meter">
+                            <div class="meter-bar" style="height: @(MasterMuted ? 0 : MasterVolume * 100)%"></div>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.01" value="@MasterVolume" 
+                               class="vertical-slider" @oninput="OnMasterChanged" orient="vertical" />
+                    </div>
+                    <span class="bus-name">MASTER</span>
+                    <span class="bus-db">@(MasterMuted ? "MUTE" : $"{LinearToDb(MasterVolume):F1} dB")</span>
+                    <button class="bus-mute-btn @(MasterMuted ? "muted" : "")" @onclick="ToggleMasterMute">M</button>
+                </div>
+
+                <!-- MUSIC -->
+                <div class="bus-column">
+                    <div class="fader-slot-pair">
+                        <div class="bus-meter">
+                            <div class="meter-bar music" style="height: @(MusicMuted ? 0 : MusicVolume * 100)%"></div>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.01" value="@MusicVolume" 
+                               class="vertical-slider" @oninput="OnMusicChanged" orient="vertical" />
+                    </div>
+                    <span class="bus-name">MUSIC</span>
+                    <span class="bus-db">@(MusicMuted ? "MUTE" : $"{LinearToDb(MusicVolume):F1} dB")</span>
+                    <button class="bus-mute-btn @(MusicMuted ? "muted" : "")" @onclick="ToggleMusicMute">M</button>
+                </div>
+
+                <!-- SFX -->
+                <div class="bus-column">
+                    <div class="fader-slot-pair">
+                        <div class="bus-meter">
+                            <div class="meter-bar sfx" style="height: @(SfxMuted ? 0 : SfxVolume * 100)%"></div>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.01" value="@SfxVolume" 
+                               class="vertical-slider" @oninput="OnSfxChanged" orient="vertical" />
+                    </div>
+                    <span class="bus-name">SFX</span>
+                    <span class="bus-db">@(SfxMuted ? "MUTE" : $"{LinearToDb(SfxVolume):F1} dB")</span>
+                    <button class="bus-mute-btn @(SfxMuted ? "muted" : "")" @onclick="ToggleSfxMute">M</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public float MasterVolume { get; set; } = 0.8f;
+    [Parameter] public float MusicVolume { get; set; } = 0.65f;
+    [Parameter] public float SfxVolume { get; set; } = 0.9f;
+
+    [Parameter] public bool MasterMuted { get; set; }
+    [Parameter] public bool MusicMuted { get; set; }
+    [Parameter] public bool SfxMuted { get; set; }
+
+    [Parameter] public bool Fullscreen { get; set; } = true;
+    [Parameter] public bool Vsync { get; set; } = true;
+    [Parameter] public bool ScreenShake { get; set; } = true;
+    [Parameter] public bool FpsCounter { get; set; } = false;
+    [Parameter] public bool CrtFilter { get; set; } = true;
+
+    [Parameter] public EventCallback<float> OnMasterVolumeChanged { get; set; }
+    [Parameter] public EventCallback<float> OnMusicVolumeChanged { get; set; }
+    [Parameter] public EventCallback<float> OnSfxVolumeChanged { get; set; }
+
+    [Parameter] public EventCallback OnToggleMasterMute { get; set; }
+    [Parameter] public EventCallback OnToggleMusicMute { get; set; }
+    [Parameter] public EventCallback OnToggleSfxMute { get; set; }
+
+    [Parameter] public EventCallback OnToggleFullscreen { get; set; }
+    [Parameter] public EventCallback OnToggleVsync { get; set; }
+    [Parameter] public EventCallback OnToggleScreenShake { get; set; }
+    [Parameter] public EventCallback OnToggleFpsCounter { get; set; }
+    [Parameter] public EventCallback OnToggleCrtFilter { get; set; }
+
+    private async Task OnMasterChanged(ChangeEventArgs e)
+    {
+        if (float.TryParse(e.Value?.ToString(), out var v))
+            await OnMasterVolumeChanged.InvokeAsync(v);
+    }
+
+    private async Task OnMusicChanged(ChangeEventArgs e)
+    {
+        if (float.TryParse(e.Value?.ToString(), out var v))
+            await OnMusicVolumeChanged.InvokeAsync(v);
+    }
+
+    private async Task OnSfxChanged(ChangeEventArgs e)
+    {
+        if (float.TryParse(e.Value?.ToString(), out var v))
+            await OnSfxVolumeChanged.InvokeAsync(v);
+    }
+
+    private async Task ToggleMasterMute() => await OnToggleMasterMute.InvokeAsync();
+    private async Task ToggleMusicMute() => await OnToggleMusicMute.InvokeAsync();
+    private async Task ToggleSfxMute() => await OnToggleSfxMute.InvokeAsync();
+
+    private async Task ToggleFullscreen() => await OnToggleFullscreen.InvokeAsync();
+    private async Task ToggleVsync() => await OnToggleVsync.InvokeAsync();
+    private async Task ToggleScreenShake() => await OnToggleScreenShake.InvokeAsync();
+    private async Task ToggleFpsCounter() => await OnToggleFpsCounter.InvokeAsync();
+    private async Task ToggleCrtFilter() => await OnToggleCrtFilter.InvokeAsync();
+
+    private double LinearToDb(float linear) => linear <= 0.0001f ? -80.0 : 20.0 * Math.Log10(linear);
+}

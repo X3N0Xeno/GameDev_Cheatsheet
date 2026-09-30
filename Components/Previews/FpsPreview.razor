@@ -1,0 +1,177 @@
+@implements IDisposable
+
+<div class="viewport-shell-box" style="width: 100%; height: 100%; max-height: 520px;">
+    <div class="shell-label">FPS_CONTROLLER_3D.gd — FULL WASD MOTION & CROSSHAIR RAYCAST FEEDBACK</div>
+    <div class="shell-content" style="height: 100%; padding: 32px 16px 12px 16px;">
+        <div @onmousemove="HandleMouseMove" @onmousedown="FireWeapon"
+             style="position: relative; width: 100%; height: 100%; background: #060908; border: 1px solid #1a2a1a; cursor: crosshair; overflow: hidden; user-select: none;">
+            
+            <!-- Dynamic Sky & Horizon Plane -->
+            <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #050b18 0%, #0c152a 100%); transform: translateY(@(Pitch * 0.8)px);"></div>
+            <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 48%, #09120a 50%, #060c07 100%); transform: translateY(@(-Pitch * 0.5)px);"></div>
+
+            <!-- Perspective Floor Grid (Moving with Player WASD Z/X coords) -->
+            <svg width="100%" height="100%" style="position: absolute; inset: 0; transform: translateY(@(-Pitch * 0.5)px);">
+                @for (int i = -10; i <= 10; i++)
+                {
+                    double startX = 480 + (i * 32) + (Yaw * 0.5) - (playerX * 0.4);
+                    double endX = 480 + (i * 180) + (Yaw * 2.2) - (playerX * 1.8);
+                    <line x1="@startX" y1="230" x2="@endX" y2="480" stroke="#132415" stroke-width="1.2" />
+                }
+                @for (int j = 1; j <= 6; j++)
+                {
+                    double y = 230 + Math.Pow(j, 1.9) * 7 + (playerZ % 24);
+                    <line x1="0" y1="@y" x2="960" y2="@y" stroke="#132415" stroke-width="1.2" />
+                }
+            </svg>
+
+            <!-- Target Pillars: Rendered in True Camera Perspective -->
+            @foreach (var ox in pillarWorldX)
+            {
+                // Pillar screen position is centered at 480 + ox + (Yaw * offset) - playerX
+                double screenPillarX = 480 + ox + (Yaw * 1.8) - playerX;
+                double scale = Math.Clamp(1.0 - Math.Abs(ox) * 0.001, 0.7, 1.1);
+                bool isHit = hitPillars.Contains(ox);
+
+                <div style="position: absolute; width: @(64 * scale)px; height: @(150 * scale)px; background: #121c14; border: 1.5px solid #233827; 
+                            left: @(screenPillarX)px; top: calc(50% - 75px + @(Pitch * 0.5)px + @(jumpY)px + @(walkBob)px); transform: translateX(-50%); box-shadow: 0 6px 18px rgba(0,0,0,0.7);">
+                    <div style="width: 100%; height: 4px; background: @(isHit ? "#ff4444" : "#4ade80"); opacity: 0.8;"></div>
+                    
+                    @if (isHit)
+                    {
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; background: #ff3333; border-radius: 50%; box-shadow: 0 0 12px #ff2222;"></div>
+                    }
+                </div>
+            }
+
+            <!-- Weapon Viewmodel with Recoil Kick & Muzzle Flash -->
+            <div style="position: absolute; bottom: @(-10 + recoilKick + walkBob)px; right: calc(60px - @(Yaw * 0.2)px); width: 120px; height: 110px; z-index: 5; pointer-events: none;">
+                <div style="position: absolute; bottom: 0; right: 0; width: 95px; height: 30px; background: #151f17; border: 1px solid #2a3c2e;"></div>
+                <div style="position: absolute; bottom: 30px; right: 20px; width: 16px; height: 55px; background: #0f1610; border: 1px solid #223225;"></div>
+                @if (recoilKick < -4)
+                {
+                    <div style="position: absolute; bottom: 85px; right: 14px; width: 28px; height: 28px; background: radial-gradient(circle, #ffea78 0%, #ff4400 70%, transparent 100%); border-radius: 50%; box-shadow: 0 0 20px #ffea78;"></div>
+                }
+            </div>
+
+            <!-- Screen-Center Crosshair Reticle -->
+            <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 26px; height: 26px; z-index: 10; pointer-events: none;">
+                <div style="position: absolute; top: 12px; left: @(-crosshairSpread)px; width: 8px; height: 2px; background: @(hitConfirmFlash ? "#ff4444" : "#4ade80");"></div>
+                <div style="position: absolute; top: 12px; right: @(-crosshairSpread)px; width: 8px; height: 2px; background: @(hitConfirmFlash ? "#ff4444" : "#4ade80");"></div>
+                <div style="position: absolute; left: 12px; top: @(-crosshairSpread)px; width: 2px; height: 8px; background: @(hitConfirmFlash ? "#ff4444" : "#4ade80");"></div>
+                <div style="position: absolute; left: 12px; bottom: @(-crosshairSpread)px; width: 2px; height: 8px; background: @(hitConfirmFlash ? "#ff4444" : "#4ade80");"></div>
+            </div>
+
+            <!-- Diagnostics -->
+            <div style="position: absolute; bottom: 10px; left: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #5a7a58;">
+                X: @((int)playerX) | Z: @((int)playerZ) | PITCH: @((int)Pitch)° | YAW: @((int)Yaw)°
+            </div>
+            <div style="position: absolute; bottom: 10px; right: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #4ade80;">
+                @(hitConfirmFlash ? "🎯 HIT CONFIRMED (RAYCAST HIT)" : (isMoving ? "● STATE: SPRINTING" : "○ STATE: IDLE"))
+            </div>
+            <div style="position: absolute; top: 10px; left: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #4a6a48;">
+                WASD: MOVE · MOUSE DRAG: AIM · CLICK: ACCURATE RAYCAST SHOT
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public double Pitch { get; set; } = 0;
+    public double Yaw { get; set; } = 0;
+    
+    private double playerX = 0;
+    private double playerZ = 0;
+    private double walkBob = 0;
+    private double jumpY = 0;
+    private double recoilKick = 0;
+    private double crosshairSpread = 0;
+    private bool isMoving = false;
+    private bool hitConfirmFlash = false;
+
+    private readonly int[] pillarWorldX = new int[] { -260, 0, 260 };
+    private readonly HashSet<int> hitPillars = new();
+
+    public bool KeyW { get; set; }
+    public bool KeyS { get; set; }
+    public bool KeyA { get; set; }
+    public bool KeyD { get; set; }
+
+    private CancellationTokenSource cts = new();
+
+    protected override void OnInitialized()
+    {
+        _ = RunFpsLoopAsync(cts.Token);
+    }
+
+    private async Task RunFpsLoopAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        double bobTimer = 0;
+
+        while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+        {
+            isMoving = KeyW || KeyS || KeyA || KeyD;
+
+            if (isMoving)
+            {
+                bobTimer += 0.15;
+                walkBob = Math.Sin(bobTimer) * 5.0;
+
+                if (KeyW) playerZ += 3.0;
+                if (KeyS) playerZ -= 3.0;
+                if (KeyA) playerX -= 3.0;
+                if (KeyD) playerX += 3.0;
+            }
+            else
+            {
+                walkBob = Math.Max(0, walkBob * 0.85);
+            }
+
+            if (recoilKick < 0) recoilKick += 1.0;
+            if (crosshairSpread > 0) crosshairSpread -= 0.6;
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void HandleMouseMove(MouseEventArgs e)
+    {
+        if (e.Buttons == 1) // Dragging in viewport
+        {
+            Yaw += e.MovementX * 0.35;
+            Pitch = Math.Clamp(Pitch + e.MovementY * 0.35, -50, 50);
+        }
+    }
+
+    public void FireWeapon()
+    {
+        recoilKick = -16;
+        crosshairSpread = 8;
+        hitConfirmFlash = false;
+
+        // TRUE RAYCAST: Ray projects through screen center (x = 480).
+        // Find if any pillar's projected screen position intersects screen center (480 +/- 35px)
+        foreach (var ox in pillarWorldX)
+        {
+            double screenPillarX = 480 + ox + (Yaw * 1.8) - playerX;
+            if (Math.Abs(screenPillarX - 480) <= 38)
+            {
+                hitConfirmFlash = true;
+                hitPillars.Add(ox);
+                break;
+            }
+        }
+
+        Task.Delay(200).ContinueWith(_ => { hitConfirmFlash = false; InvokeAsync(StateHasChanged); });
+    }
+
+    public void Jump() => jumpY = -24;
+    public void Reset() { playerX = 0; playerZ = 0; Pitch = 0; Yaw = 0; hitPillars.Clear(); }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

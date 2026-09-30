@@ -1,0 +1,64 @@
+<div class="hud-preview-stage">
+    <!-- Viewport Grid Backdrop -->
+    <div class="hud-radar-grid"></div>
+
+    <!-- Dynamic Hit Flash Overlay -->
+    @if (IsTakingDamage)
+    {
+        <div class="hud-damage-flash"></div>
+    }
+
+    <!-- Pin Top Left: Radar & Mission -->
+    <div class="hud-anchor top-left">
+        <div class="radar-box">
+            <div class="radar-sweep"></div>
+            <div class="radar-blip b1"></div>
+            <div class="radar-blip b2"></div>
+        </div>
+        <div class="mission-tag">SECTOR: 04-OMEGA</div>
+    </div>
+
+    <!-- Pin Top Right: Score & Multiplier -->
+    <div class="hud-anchor top-right">
+        <div class="hud-score-counter">SCORE: @Score.ToString("D6")</div>
+        <div class="hud-mult-tag">x2.5 MULTIPLIER</div>
+    </div>
+
+    <!-- Pin Bottom Left: Health & Regenerating Stamina -->
+    <div class="hud-anchor bottom-left">
+        <div class="hud-stat-label">
+            <span style="color: #e53935;">VITALITY</span>
+            <span>@HudHealth / 100</span>
+        </div>
+        <div class="hud-meter-frame" style="margin-bottom: 8px;">
+            <div class="hud-meter-fill health-fill" style="width: @(HudHealth)%"></div>
+        </div>
+
+        <div class="hud-stat-label">
+            <span>STAMINA (BOOST)</span>
+            <span>@((int)Stamina)%</span>
+        </div>
+        <div class="hud-meter-frame">
+            <div class="hud-meter-fill stamina-fill" style="width: @(Stamina)%"></div>
+        </div>
+    </div>
+
+    <!-- Pin Bottom Right: Ammo Counter & Weapon Class -->
+    <div class="hud-anchor bottom-right">
+        <div class="hud-weapon-title">PULSE RIFLE MK-II</div>
+        <div class="hud-ammo-digits">
+            <span class="ammo-current">@CurrentAmmo.ToString("D2")</span>
+            <span class="ammo-sep">/</span>
+            <span class="ammo-mag">@ReserveAmmo.ToString("D2")</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int HudHealth { get; set; } = 100;
+    [Parameter] public int Score { get; set; } = 48200;
+    [Parameter] public float Stamina { get; set; } = 85f;
+    [Parameter] public int CurrentAmmo { get; set; } = 24;
+    [Parameter] public int ReserveAmmo { get; set; } = 30;
+    [Parameter] public bool IsTakingDamage { get; set; } = false;
+}

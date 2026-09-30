@@ -1,0 +1,150 @@
+@implements IDisposable
+
+<div class="viewport-shell-box" style="width: 100%; height: 100%; max-height: 520px;">
+    <div class="shell-label">MELEE_HITBOX.gd — PLAYABLE SWORDSMAN [A/D MOVE · J/K ATTACK · SPACE JUMP]</div>
+    <div class="shell-content" style="height: 100%; padding: 32px 16px 12px 16px;">
+        <div style="position: relative; width: 100%; height: 100%; background: #080c08; border: 1px solid #1a2a1a; overflow: hidden;">
+            <svg width="100%" height="100%" viewBox="0 0 960 440" style="position: absolute; inset: 0;">
+                <defs>
+                    <pattern id="meleeGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+                        <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#0e150e" stroke-width="0.8" />
+                    </pattern>
+                </defs>
+                <rect width="960" height="440" fill="url(#meleeGrid)" />
+
+                <!-- Floor -->
+                <line x1="0" y1="360" x2="960" y2="360" stroke="#1f3422" stroke-width="2" />
+
+                <!-- Player Swordsman (Moves with PlayerX / JumpY) -->
+                <g transform="translate(@playerX, @(270 + jumpY))">
+                    <rect x="-18" y="0" width="36" height="90" fill="#142818" stroke="#4ade80" stroke-width="2" />
+                    <rect x="-8" y="16" width="16" height="24" fill="#2a4a2a" />
+                    <!-- Sword Holster/Hilt -->
+                    <line x1="16" y1="30" x2="30" y2="10" stroke="#4ade80" stroke-width="3" />
+                    <text x="0" y="-12" fill="#4ade80" font-family="'Share Tech Mono', monospace" font-size="11" text-anchor="middle">
+                        HERO [@((int)playerX), @((int)(270 + jumpY))]
+                    </text>
+                </g>
+
+                <!-- Active Swing Arc Hitbox -->
+                @if (isSwinging)
+                {
+                    double arcRadius = attackType == "HEAVY" ? 130 : 90;
+                    <path d="M @(playerX + 16) @(280 + jumpY) A @arcRadius @arcRadius 0 0 1 @(playerX + arcRadius) @(350 + jumpY) L @(playerX + 16) @(320 + jumpY) Z" 
+                          fill="@(attackType == "HEAVY" ? "rgba(255, 68, 68, 0.4)" : "rgba(255, 203, 107, 0.4)")" 
+                          stroke="@(attackType == "HEAVY" ? "#ff4444" : "#ffcb6b")" stroke-width="2.5" />
+                }
+
+                <!-- Combat Dummy -->
+                <g transform="translate(@dummyX, 270)" style="transition: transform 0.08s ease-out;">
+                    <rect x="-20" y="0" width="40" height="90" fill="@(dummyHit ? "#7a1a1a" : "#1a221a")" 
+                          stroke="@(dummyHit ? "#ff4444" : "#cc2020")" stroke-width="2" />
+                    <text x="0" y="-12" fill="#cc5050" font-family="'Share Tech Mono', monospace" font-size="11" text-anchor="middle">
+                        DUMMY [@dummyHp HP]
+                    </text>
+                </g>
+            </svg>
+
+            <!-- Combo Counter -->
+            @if (combo > 1)
+            {
+                <div style="position: absolute; top: 16px; right: 18px; font-family: 'Share Tech Mono', monospace; font-size: 1.1rem; color: #ffcb6b; font-weight: bold;">
+                    @(combo)x COMBO!
+                </div>
+            }
+
+            <div style="position: absolute; bottom: 10px; left: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #5a7a58;">
+                SWING: @(isSwinging ? $"{attackType} (HITBOX ACTIVE)" : "IDLE") | CONTROLS: [A/D] WALK · [SPACE] JUMP · [J] LIGHT · [K] HEAVY
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public double playerX = 260;
+    public double jumpY = 0;
+    private double dummyX = 580;
+    private int dummyHp = 100;
+    private bool dummyHit = false;
+    private bool isSwinging = false;
+    private string attackType = "LIGHT";
+    private int combo = 0;
+
+    public bool KeyA { get; set; }
+    public bool KeyD { get; set; }
+
+    private CancellationTokenSource cts = new();
+
+    protected override void OnInitialized()
+    {
+        _ = RunLoopAsync(cts.Token);
+    }
+
+    private async Task RunLoopAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
+        DateTime last = DateTime.UtcNow;
+
+        while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+        {
+            DateTime now = DateTime.UtcNow;
+            double dt = Math.Min((now - last).TotalSeconds, 0.05);
+            last = now;
+
+            if (KeyA) playerX = Math.Max(50, playerX - 220 * dt);
+            if (KeyD) playerX = Math.Min(dummyX - 24, playerX + 220 * dt);
+
+            // Gravity for jump
+            if (jumpY < 0) jumpY = Math.Min(0, jumpY + 90 * dt);
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void MoveLeft(bool down) => KeyA = down;
+    public void MoveRight(bool down) => KeyD = down;
+    public void Jump() { if (jumpY == 0) jumpY = -40; }
+
+    public async void Attack(string type)
+    {
+        if (isSwinging) return;
+        attackType = type;
+        isSwinging = true;
+
+        double reach = type == "HEAVY" ? 140 : 100;
+        int damage = type == "HEAVY" ? 30 : 15;
+
+        if (playerX + reach >= dummyX - 20)
+        {
+            dummyHp = Math.Max(0, dummyHp - damage);
+            dummyHit = true;
+            dummyX = Math.Min(900, dummyX + (type == "HEAVY" ? 50 : 25)); // Knockback
+            combo++;
+        }
+        else
+        {
+            combo = 0;
+        }
+
+        StateHasChanged();
+        await Task.Delay(type == "HEAVY" ? 320 : 180);
+        isSwinging = false;
+        dummyHit = false;
+        StateHasChanged();
+    }
+
+    public void Reset()
+    {
+        dummyHp = 100;
+        dummyX = 580;
+        playerX = 260;
+        combo = 0;
+        isSwinging = false;
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

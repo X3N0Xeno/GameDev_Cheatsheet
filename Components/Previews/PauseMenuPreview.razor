@@ -1,0 +1,49 @@
+<div class="pause-preview-stage">
+    <!-- Simulating paused game behind dimmer -->
+    <div class="background-game-freeze">
+        <div class="frozen-entity e1">👾</div>
+        <div class="frozen-entity e2">🚀</div>
+        <div class="frozen-entity e3">💥</div>
+        <div class="freeze-tag">[SCENETREE: PAUSED]</div>
+    </div>
+
+    <!-- The Pause Dialog Overlay -->
+    @if (IsPaused)
+    {
+        <div class="pause-modal-dimmer">
+            <div class="pause-box">
+                <div class="pause-header">
+                    <span class="pause-badge">SYSTEM INTERRUPT</span>
+                    <h3>PAUSE OVERLAY</h3>
+                </div>
+
+                <div class="menu-button-stack">
+                    <button class="retro-menu-btn active" @onclick="Resume">▶ RESUME OPERATION</button>
+                    <button class="retro-menu-btn" @onclick="Restart">↻ RESTART SCENE</button>
+                    <button class="retro-menu-btn" @onclick="Quit">✕ QUIT TO HUB</button>
+                </div>
+
+                <div class="pause-footer">
+                    <span>MODE: PROCESS_MODE_ALWAYS</span>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="unpaused-banner">
+            <span>GAME RUNNING — CLICK 'PAUSE' IN CONTROLS</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsPaused { get; set; } = true;
+    [Parameter] public EventCallback OnResume { get; set; }
+    [Parameter] public EventCallback OnRestart { get; set; }
+    [Parameter] public EventCallback OnQuit { get; set; }
+
+    private async Task Resume() => await OnResume.InvokeAsync();
+    private async Task Restart() => await OnRestart.InvokeAsync();
+    private async Task Quit() => await OnQuit.InvokeAsync();
+}

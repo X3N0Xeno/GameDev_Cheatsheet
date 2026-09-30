@@ -1,0 +1,388 @@
+@implements IDisposable
+
+<div class="viewport-shell-box" style="width: 100%; height: 100%; max-height: 520px;">
+    <div class="shell-label">FOOTSIES_FIGHTER_2D.gd — REAL-TIME FRAME DATA CALCULATION & AUTO-RESET</div>
+    <div class="shell-content" style="height: 100%; padding: 32px 16px 12px 16px;">
+        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; gap: 8px;">
+            <!-- DUAL HP & KO BANNER -->
+            <div style="display: flex; gap: 14px; align-items: center;">
+                <div style="flex: 1;">
+                    <div style="height: 18px; background: #090c09; border: 1px solid #2a3428; position: relative;">
+                        <div style="height: 100%; width: @(P1Hp)%; background: #2a9a44; transition: width 0.15s ease-out;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #5a8a58; margin-top: 3px;">
+                        <span>P1 [PLAYER]</span>
+                        <span>@P1Hp / 100</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; align-items: center; min-width: 80px;">
+                    <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #ffcb6b; font-weight: bold;">
+                        @(IsRoundOver ? "K.O." : $"{MatchTimer}s")
+                    </span>
+                    <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.52rem; color: @(ClashFlash ? "#ffd07a" : (CounterHit ? "#ff4444" : "#4ade80"));">
+                        @(IsRoundOver ? $"RESETTING IN {ResetCountdown}s" : (ClashFlash ? "⚡ CLASH!" : (CounterHit ? "💥 COUNTER HIT!" : CurrentActionPhase)))
+                    </span>
+                </div>
+
+                <div style="flex: 1;">
+                    <div style="height: 18px; background: #090c09; border: 1px solid #2a3428; position: relative;">
+                        <div style="height: 100%; width: @(P2Hp)%; background: @(P2Hp > 50 ? "#cc2020" : "#ff5050"); transition: width 0.15s ease-out; margin-left: auto; filter: @(HitFlash ? "brightness(2.5)" : "none");"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #8a4a4a; margin-top: 3px;">
+                        <span>@P2Hp / 100</span>
+                        <span>CPU [DYNAMIC AI]</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPANDED ARENA -->
+            <div style="position: relative; flex: 1; min-height: 240px; background: #080c08; border: 1px solid #1a2a1a; overflow: hidden;">
+                <!-- Distance Grid Lines -->
+                <svg width="100%" height="100%" style="position: absolute; inset: 0;">
+                    <defs>
+                        <pattern id="footGridWide" width="48" height="48" patternUnits="userSpaceOnUse">
+                            <line x1="0" y1="0" x2="0" y2="48" stroke="#0e150e" stroke-width="1" />
+                            <line x1="0" y1="48" x2="48" y2="48" stroke="#0e150e" stroke-width="1" />
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#footGridWide)" />
+                </svg>
+
+                <!-- Stage Floor -->
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 32px; background: #111711; border-top: 1px solid #2a3e2a;">
+                    <div style="position: absolute; top: 6px; left: @(P1X + 16)px; width: @(Math.Max(0, P2X - P1X - 32))px; height: 1px; border-top: 1.5px dashed #2a5a2a;"></div>
+                </div>
+
+                <!-- P1 FIGHTER (GREEN HURTBOX) -->
+                <div style="position: absolute; bottom: 32px; left: @(P1X)px; transition: left 0.05s linear; display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.52rem; color: #4ade80; margin-bottom: 2px;">
+                        @P1State @(P1State == "ATTACK" ? $"[{CurrentActionPhase}]" : "")
+                    </span>
+
+                    <div style="width: 32px; height: @(P1State == "CROUCH" ? 36 : (P1State == "JUMP" ? 44 : 58))px; 
+                                background: rgba(74, 222, 128, 0.22); border: 2px solid #4ade80; 
+                                transform: @(P1State == "JUMP" ? "translateY(-40px)" : "none"); 
+                                transition: all 0.08s ease-out; position: relative;">
+                        <div style="position: absolute; top: 8px; right: 4px; width: 5px; height: 5px; background: #0d0f0d;"></div>
+                    </div>
+
+                    <!-- Red Attack Hitbox (Only Rendered during ACTIVE frames) -->
+                    @if (P1State == "ATTACK" && CurrentActionPhase == "ACTIVE")
+                    {
+                        <div style="position: absolute; top: 16px; left: 30px; 
+                                    width: @(AttackType == "HEAVY" ? 72 : 48)px; height: @(AttackType == "HEAVY" ? 34 : 20)px; 
+                                    border: 2px dashed #ff4444; background: rgba(255, 68, 68, 0.4); box-shadow: 0 0 12px rgba(255,68,68,0.6);">
+                            <span style="position: absolute; top: -13px; left: 0; font-family: 'Share Tech Mono', monospace; font-size: 0.48rem; color: #ff6666;">
+                                @(AttackType == "HEAVY" ? "HEAVY SWEEP" : "FAST POKE")
+                            </span>
+                        </div>
+                    }
+                </div>
+
+                <!-- P2 CPU FOOTSIES OPPONENT (RED HURTBOX) -->
+                <div style="position: absolute; bottom: 32px; left: @(P2X)px; transition: left 0.06s linear; display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.52rem; color: #cc5050; margin-bottom: 2px;">
+                        @(P2State == "ATTACK" ? $"CPU [ACTIVE]" : P2State)
+                    </span>
+
+                    <div style="width: 32px; height: @(P2State == "CROUCH" ? 36 : 58)px; 
+                                background: @(HitFlash ? "rgba(255, 68, 68, 0.6)" : "rgba(180, 40, 40, 0.25)"); 
+                                border: 2px solid @(HitFlash ? "#ff4444" : "#cc2020");">
+                        <div style="position: absolute; top: 8px; left: 4px; width: 5px; height: 5px; background: #0d0f0d;"></div>
+                    </div>
+
+                    @if (P2State == "ATTACK")
+                    {
+                        <div style="position: absolute; top: 18px; right: 30px; width: 50px; height: 20px; 
+                                    border: 2px dashed #ff9944; background: rgba(255, 153, 68, 0.4);"></div>
+                    }
+                </div>
+
+                <!-- K.O. OVERLAY BANNER -->
+                @if (IsRoundOver)
+                {
+                    <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 30;">
+                        <h2 style="font-family: 'Share Tech Mono', monospace; font-size: 2.2rem; color: @(P1Hp > 0 ? "#4ade80" : "#ff4444"); letter-spacing: 4px; margin: 0;">
+                            @(P1Hp > 0 ? "PLAYER 1 WINS!" : "CPU WINS!")
+                        </h2>
+                        <span style="font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; color: #ffcb6b; margin-top: 6px;">
+                            AUTO-RESTARTING IN @(ResetCountdown)s...
+                        </span>
+                    </div>
+                }
+            </div>
+
+            <!-- LIVE DYNAMIC FRAME DATA READOUT -->
+            <div style="display: flex; justify-content: space-between; font-family: 'Share Tech Mono', monospace; font-size: 0.58rem; color: #4a6a48; border-top: 1px solid #1a251a; padding-top: 6px;">
+                <span>DISTANCE: @((int)(P2X - P1X))px | STARTUP: @(AttackStartupFrames)F | ACTIVE: @(AttackActiveFrames)F | RECOVERY: @(AttackRecoveryFrames)F</span>
+                <span style="color: @(LiveFrameAdvantage >= 0 ? "#4ade80" : "#ff4444"); font-weight: bold;">
+                    LIVE ADVANTAGE: @(LiveFrameAdvantage >= 0 ? $"+{LiveFrameAdvantage}F" : $"{LiveFrameAdvantage}F")
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public int P1Hp { get; set; } = 100;
+    public int P2Hp { get; set; } = 100;
+    public double P1X { get; set; } = 140;
+    public double P2X { get; set; } = 640;
+    public string P1State { get; set; } = "IDLE";
+    public string P2State { get; set; } = "IDLE";
+    public string AttackType { get; set; } = "LIGHT";
+    public string CurrentActionPhase { get; set; } = "NEUTRAL";
+
+    public bool HitFlash { get; set; } = false;
+    public bool CounterHit { get; set; } = false;
+    public bool ClashFlash { get; set; } = false;
+    public bool IsRoundOver { get; set; } = false;
+    public int ResetCountdown { get; set; } = 3;
+    public int MatchTimer { get; set; } = 99;
+
+    // Real dynamic frame calculations (60 FPS basis)
+    public int AttackStartupFrames { get; set; } = 0;
+    public int AttackActiveFrames { get; set; } = 0;
+    public int AttackRecoveryFrames { get; set; } = 0;
+    public int LiveFrameAdvantage { get; set; } = 0;
+
+    private int attackElapsedFrames = 0;
+    private int attackTotalFrames = 0;
+    private int defenderStunFrames = 0;
+    private double aiDecisionTimer = 0;
+
+    public bool KeyA { get; set; }
+    public bool KeyD { get; set; }
+
+    private CancellationTokenSource cts = new();
+
+    protected override void OnInitialized()
+    {
+        _ = RunFootsiesEngineAsync(cts.Token);
+    }
+
+    private async Task RunFootsiesEngineAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16)); // 60 FPS tick
+        DateTime last = DateTime.UtcNow;
+
+        while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+        {
+            DateTime now = DateTime.UtcNow;
+            double dt = Math.Min((now - last).TotalSeconds, 0.05);
+            last = now;
+
+            if (IsRoundOver) continue;
+
+            // 1. Frame-by-Frame Attack Progress
+            if (P1State == "ATTACK")
+            {
+                attackElapsedFrames++;
+                if (attackElapsedFrames <= AttackStartupFrames)
+                {
+                    CurrentActionPhase = "STARTUP";
+                }
+                else if (attackElapsedFrames <= AttackStartupFrames + AttackActiveFrames)
+                {
+                    CurrentActionPhase = "ACTIVE";
+                    CheckHitboxes();
+                }
+                else if (attackElapsedFrames <= attackTotalFrames)
+                {
+                    CurrentActionPhase = "RECOVERY";
+                }
+                else
+                {
+                    P1State = "IDLE";
+                    CurrentActionPhase = "NEUTRAL";
+                    LiveFrameAdvantage = 0;
+                    CounterHit = false;
+                    ClashFlash = false;
+                }
+            }
+            else
+            {
+                if (KeyA) { P1X = Math.Max(40, P1X - 220 * dt); P1State = "WALK"; }
+                else if (KeyD) { P1X = Math.Min(P2X - 36, P1X + 220 * dt); P1State = "WALK"; }
+                else if (P1State == "WALK") P1State = "IDLE";
+            }
+
+            // 2. CPU Dynamic Footsies AI (Acts on Frame Advantage)
+            // 2. CPU Dynamic Footsies AI (Acts on Frame Advantage & Punishes Whiffs)
+            aiDecisionTimer -= dt;
+            if (defenderStunFrames > 0)
+            {
+                defenderStunFrames--;
+                P2State = "HITSTUN";
+            }
+            else if (P2State == "ATTACK")
+            {
+                // Active strike
+            }
+            else
+            {
+                double dist = P2X - P1X;
+
+                // PUNISH MECHANIC: If player is recovering / minus on frames, CPU immediately punishes!
+                if (LiveFrameAdvantage < 0 && dist < 160 && aiDecisionTimer <= 0)
+                {
+                    P2X = Math.Max(P1X + 34, P2X - 220 * dt); // Dash in
+                    CpuPoke();
+                    aiDecisionTimer = 0.5;
+                }
+                else if (dist > 180)
+                {
+                    P2X = Math.Max(P1X + 36, P2X - 180 * dt); // Walk in
+                    P2State = "WALK";
+                }
+                else if (dist < 80)
+                {
+                    P2X = Math.Min(880, P2X + 160 * dt); // Shimmy back
+                    P2State = "WALK";
+                }
+                else
+                {
+                    P2State = "IDLE";
+                    if (aiDecisionTimer <= 0)
+                    {
+                        CpuPoke();
+                        aiDecisionTimer = 0.9;
+                    }
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void P1Poke(string type)
+    {
+        if (P1State == "ATTACK" || IsRoundOver) return;
+
+        AttackType = type;
+        P1State = "ATTACK";
+        attackElapsedFrames = 0;
+
+        // Dynamic 60 FPS fighting game frame counts
+        if (type == "LIGHT")
+        {
+            AttackStartupFrames = 4;
+            AttackActiveFrames = 3;
+            AttackRecoveryFrames = 8;
+            attackTotalFrames = 15;
+            defenderStunFrames = 14;
+        }
+        else // HEAVY
+        {
+            AttackStartupFrames = 9;
+            AttackActiveFrames = 4;
+            AttackRecoveryFrames = 18;
+            attackTotalFrames = 31;
+            defenderStunFrames = 24;
+        }
+    }
+
+    private void CheckHitboxes()
+    {
+        double reach = AttackType == "HEAVY" ? 104 : 80;
+        int dmg = AttackType == "HEAVY" ? 25 : 12;
+
+        if (P2State == "ATTACK")
+        {
+            ClashFlash = true;
+            P1X = Math.Max(40, P1X - 40);
+            P2X = Math.Min(880, P2X + 40);
+            return;
+        }
+
+        if (P1X + reach >= P2X)
+        {
+            bool wasWhiff = (P2State == "WALK" || P2State == "ATTACK");
+            CounterHit = wasWhiff;
+            if (wasWhiff) dmg = (int)(dmg * 1.5);
+
+            P2Hp = Math.Max(0, P2Hp - dmg);
+            HitFlash = true;
+            P2X = Math.Min(880, P2X + (AttackType == "HEAVY" ? 70 : 35));
+
+            // True Frame Advantage = (Defender Hitstun remaining) - (Attacker Recovery remaining)
+            int remainingRecovery = attackTotalFrames - attackElapsedFrames;
+            LiveFrameAdvantage = defenderStunFrames - remainingRecovery;
+
+            Task.Delay(140).ContinueWith(_ => { HitFlash = false; InvokeAsync(StateHasChanged); });
+
+            // Trigger K.O. Auto-Reset Sequence
+            if (P2Hp <= 0) StartKoResetSequence();
+        }
+        else
+        {
+            // Whiff on block/empty air: Frame advantage becomes negative remaining recovery
+            int remainingRecovery = attackTotalFrames - attackElapsedFrames;
+            LiveFrameAdvantage = -remainingRecovery;
+        }
+    }
+
+    private void CpuPoke()
+    {
+        P2State = "ATTACK";
+        Task.Delay(180).ContinueWith(_ =>
+        {
+            if (P2X - 85 <= P1X && !IsRoundOver)
+            {
+                P1Hp = Math.Max(0, P1Hp - 12);
+                P1X = Math.Max(40, P1X - 35);
+                if (P1Hp <= 0) StartKoResetSequence();
+            }
+            P2State = "IDLE";
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void StartKoResetSequence()
+    {
+        IsRoundOver = true;
+        ResetCountdown = 3;
+        StateHasChanged();
+
+        Task.Run(async () =>
+        {
+            while (ResetCountdown > 0)
+            {
+                await Task.Delay(1000);
+                ResetCountdown--;
+                await InvokeAsync(StateHasChanged);
+            }
+            ResetRound();
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public void MoveLeft(bool down) => KeyA = down;
+    public void MoveRight(bool down) => KeyD = down;
+    public void P1Crouch() => P1State = "CROUCH";
+    public void P1Neutral() { if (P1State == "CROUCH") P1State = "IDLE"; }
+
+    public void Reset() => ResetRound();
+
+    public void ResetRound()
+    {
+        P1Hp = 100;
+        P2Hp = 100;
+        P1X = 140;
+        P2X = 640;
+        P1State = "IDLE";
+        P2State = "IDLE";
+        CurrentActionPhase = "NEUTRAL";
+        LiveFrameAdvantage = 0;
+        IsRoundOver = false;
+        CounterHit = false;
+        ClashFlash = false;
+    }
+
+    public void Dispose()
+    {
+        cts.Cancel();
+        cts.Dispose();
+    }
+}

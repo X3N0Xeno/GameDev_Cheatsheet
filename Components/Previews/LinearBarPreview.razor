@@ -1,0 +1,32 @@
+<div class="bar-meta-row">
+    <span class="hp-label">HP</span>
+    <span class="hp-values">@((int)Math.Round(DisplayHealth)) / @MaxHealth</span>
+</div>
+
+<div class="linear-bar-container">
+    <div class="bar-center-text">SMOOTH FILL</div>
+    @if (EnableGhost)
+    {
+        <div class="bar-layer ghost-layer" style="width: @(DisplayGhost.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+    }
+    <div class="bar-layer health-layer" style="width: @(DisplayHealth.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+    <div class="bar-divisions-overlay"></div>
+</div>
+
+<div class="legend-row">
+    <div class="legend-item">
+        <span class="legend-swatch swatch-current"></span>
+        <span style="color: #6a746e;">current — @((int)Math.Round(DisplayHealth))%</span>
+    </div>
+    <div class="legend-item">
+        <span class="legend-swatch swatch-ghost"></span>
+        <span style="color: #6a746e;">ghost — Δ@((int)Math.Max(0, Math.Round(DisplayGhost - DisplayHealth))) pts</span>
+    </div>
+</div>
+
+@code {
+    [Parameter] public double DisplayHealth { get; set; }
+    [Parameter] public double DisplayGhost { get; set; }
+    [Parameter] public int MaxHealth { get; set; }
+    [Parameter] public bool EnableGhost { get; set; }
+}

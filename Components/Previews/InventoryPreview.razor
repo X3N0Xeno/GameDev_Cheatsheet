@@ -1,0 +1,100 @@
+<div class="viewport-shell-box" style="width: 100%; height: 100%; max-height: 520px;">
+    <div class="shell-label">GRID_INVENTORY.gd — DRAG & DROP INVENTORY MANAGEMENT</div>
+    <div class="shell-content" style="height: 100%; padding: 32px 16px 12px 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            <div style="display: grid; grid-template-columns: repeat(4, 82px); gap: 12px; background: #0c120c; padding: 22px; border: 1.5px solid #233827; box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
+                @for (int i = 0; i < 16; i++)
+                {
+                    int idx = i;
+                    var item = slots[idx];
+                    <div style="width: 82px; height: 82px; background: #131c15; border: 1.5px solid @(draggedFromIndex == idx ? "#4ade80" : "#223625"); position: relative; display: flex; align-items: center; justify-content: center; user-select: none; cursor: @(!string.IsNullOrEmpty(item.Name) ? "grab" : "default");"
+                         draggable="@(!string.IsNullOrEmpty(item.Name) ? "true" : "false")"
+                         @ondragstart="() => OnDragStart(idx)"
+                         @ondragover:preventDefault
+                         @ondrop="() => OnDrop(idx)">
+                        
+                        @if (!string.IsNullOrEmpty(item.Name))
+                        {
+                            <span style="font-size: 32px; pointer-events: none;">@item.Icon</span>
+                            <span style="position: absolute; bottom: 3px; right: 6px; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: #4ade80; font-weight: bold; pointer-events: none;">
+                                @item.Count
+                            </span>
+                            <span style="position: absolute; top: 2px; left: 4px; font-family: 'Share Tech Mono', monospace; font-size: 7.5px; color: #5a7a58; pointer-events: none;">
+                                @item.Name.Substring(0, Math.Min(6, item.Name.Length))
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #1e2c21;">@idx</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div style="margin-top: 14px; font-family: 'Share Tech Mono', monospace; font-size: 0.62rem; color: #4a6a48;">
+                DRAG ANY ITEM TO AN EMPTY CELL TO ORGANIZE · @slots.Count(s => !string.IsNullOrEmpty(s.Name)) / 16 SLOTS OCCUPIED
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public class ItemSlot { public string Name = ""; public string Icon = ""; public int Count = 0; }
+    private ItemSlot[] slots = Enumerable.Range(0, 16).Select(_ => new ItemSlot()).ToArray();
+
+    private int draggedFromIndex = -1;
+
+    private readonly (string Name, string Icon)[] itemPool = new[]
+    {
+        ("HEALTH", "🧪"),
+        ("AMMO", "📦"),
+        ("ENERGY", "🔋"),
+        ("STIM", "💉"),
+        ("PLASMA", "💎")
+    };
+
+    private void OnDragStart(int fromIndex)
+    {
+        draggedFromIndex = fromIndex;
+    }
+
+    private void OnDrop(int toIndex)
+    {
+        if (draggedFromIndex == -1 || draggedFromIndex == toIndex) return;
+
+        // Move to empty cell or swap slots
+        var temp = slots[toIndex];
+        slots[toIndex] = slots[draggedFromIndex];
+        slots[draggedFromIndex] = temp;
+
+        draggedFromIndex = -1;
+        StateHasChanged();
+    }
+
+    public void AddItem()
+    {
+        var picked = itemPool[Random.Shared.Next(itemPool.Length)];
+        for (int i = 0; i < slots.Length; i++)
+        {
+            if (string.IsNullOrEmpty(slots[i].Name))
+            {
+                slots[i].Name = picked.Name;
+                slots[i].Icon = picked.Icon;
+                slots[i].Count = 1;
+                StateHasChanged();
+                return;
+            }
+        }
+    }
+
+    public void ClearAll()
+    {
+        for (int i = 0; i < slots.Length; i++)
+        {
+            slots[i].Name = "";
+            slots[i].Icon = "";
+            slots[i].Count = 0;
+        }
+        StateHasChanged();
+    }
+}

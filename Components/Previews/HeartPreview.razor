@@ -1,0 +1,32 @@
+<div class="bar-meta-row">
+    <span class="hp-label">HEARTS CONTAINER</span>
+    <span class="hp-values">@(HeartPoints / 2.0f) / @MaxHearts HEARTS (@HeartPoints / @(MaxHearts * 2) HP)</span>
+</div>
+
+<div class="hearts-matrix-grid">
+    @for (int i = 0; i < MaxHearts; i++)
+    {
+        int filled = HeartPoints - (i * 2);
+        <div class="heart-box">
+            <!-- Full Empty Base -->
+            <svg class="heart-svg heart-empty" viewBox="0 0 24 24">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+
+            <!-- Clipped Overlay for Full or Half Heart -->
+            @if (filled > 0)
+            {
+                <div class="heart-clip @(filled == 1 ? "clip-half" : "clip-full")">
+                    <svg class="heart-svg heart-filled" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int HeartPoints { get; set; } = 10;
+    [Parameter] public int MaxHearts { get; set; } = 5;
+}

@@ -1,0 +1,45 @@
+<div class="menu-preview-stage">
+    <div class="menu-window">
+        <div class="menu-title-block">
+            <span class="menu-super">PROJECT: TACTICAL</span>
+            <h1 class="menu-main-title">NEO PROTOCOL</h1>
+            <span class="menu-sub">VER 4.2.0-STABLE</span>
+        </div>
+
+        <div class="menu-button-stack">
+            <button class="retro-menu-btn @(SelectedMenuIndex == 0 ? "active" : "")" 
+                    @onclick="() => SetSelection(0)">
+                <span class="btn-cursor">@(SelectedMenuIndex == 0 ? "▶ " : "  ")</span>INITIATE CAMPAIGN
+            </button>
+            <button class="retro-menu-btn @(SelectedMenuIndex == 1 ? "active" : "")" 
+                    @onclick="() => SetSelection(1)">
+                <span class="btn-cursor">@(SelectedMenuIndex == 1 ? "▶ " : "  ")</span>SYSTEM SETTINGS
+            </button>
+            <button class="retro-menu-btn @(SelectedMenuIndex == 2 ? "active" : "")" 
+                    @onclick="() => SetSelection(2)">
+                <span class="btn-cursor">@(SelectedMenuIndex == 2 ? "▶ " : "  ")</span>MISSION LOGS
+            </button>
+            <button class="retro-menu-btn @(SelectedMenuIndex == 3 ? "active" : "")" 
+                    @onclick="() => SetSelection(3)">
+                <span class="btn-cursor">@(SelectedMenuIndex == 3 ? "▶ " : "  ")</span>ABORT (QUIT)
+            </button>
+        </div>
+
+        <div class="menu-status-bar">
+            <span>[W/S] NAVIGATE</span>
+            <span>STATUS: @ActionStatus</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int SelectedMenuIndex { get; set; } = 0;
+    [Parameter] public string ActionStatus { get; set; } = "STANDBY";
+    [Parameter] public EventCallback<int> OnSelectOption { get; set; }
+
+    private async Task SetSelection(int idx)
+    {
+        SelectedMenuIndex = idx;
+        await OnSelectOption.InvokeAsync(idx);
+    }
+}

@@ -1,0 +1,36 @@
+<div class="shield-health-stack">
+    <div>
+        <div class="bar-meta-row">
+            <span style="color: #00d2ff; font-weight: bold;">
+                SHIELD 
+                @if (IsBroken && CooldownMs > 0)
+                {
+                    <span class="shield-meta-regen">[RECHARGING IN @((CooldownMs / 1000.0).ToString("0.0"))s]</span>
+                }
+            </span>
+            <span class="hp-values">@((int)Math.Round(DisplayShield)) / 50</span>
+        </div>
+        <div class="stacked-bar-frame">
+            <div class="bar-layer shield-fill" style="width: @((DisplayShield / 50.0 * 100).ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+            <div class="bar-divisions-overlay"></div>
+        </div>
+    </div>
+
+    <div>
+        <div class="bar-meta-row">
+            <span class="hp-label">HEALTH (VITALITY)</span>
+            <span class="hp-values">@((int)Math.Round(DisplayHealth)) / 100</span>
+        </div>
+        <div class="stacked-bar-frame">
+            <div class="bar-layer health-layer" style="width: @(DisplayHealth.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+            <div class="bar-divisions-overlay"></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public double DisplayShield { get; set; }
+    [Parameter] public double DisplayHealth { get; set; }
+    [Parameter] public bool IsBroken { get; set; }
+    [Parameter] public int CooldownMs { get; set; }
+}
