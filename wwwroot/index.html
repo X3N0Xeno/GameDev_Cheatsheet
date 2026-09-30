@@ -3,20 +3,205 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050807" />
     <title>GameDev Cheatsheet</title>
     <base href="/" />
+    <link rel="icon" type="image/svg+xml" href="icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/component.css" />
+
+    <style>
+        /* boot screen, shown until Blazor takes over #app */
+        .boot {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            align-items: center;
+            justify-content: center;
+            gap: 22px;
+            background:
+                radial-gradient(ellipse 50% 40% at 50% 45%, rgba(46, 229, 134, 0.08), transparent 70%),
+                #050807;
+            color: #2ee586;
+            font-family: 'JetBrains Mono', Consolas, monospace;
+            font-size: 11px;
+            letter-spacing: 0.24em;
+        }
+        .boot-mark {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(46, 229, 134, 0.4);
+            background: rgba(46, 229, 134, 0.08);
+            box-shadow: 0 0 0 6px rgba(46, 229, 134, 0.05), 0 0 40px rgba(46, 229, 134, 0.18);
+            display: grid;
+            place-items: center;
+        }
+        .boot-mark::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            background: #2ee586;
+            box-shadow: 0 0 16px #2ee586;
+            animation: bootPulse 1.4s ease-in-out infinite;
+        }
+        .boot-bar {
+            width: 180px;
+            height: 2px;
+            border-radius: 2px;
+            background: #15201b;
+            overflow: hidden;
+        }
+        .boot-bar i {
+            display: block;
+            width: 40%;
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, transparent, #2ee586, transparent);
+            animation: bootSlide 1.3s ease-in-out infinite;
+        }
+        @keyframes bootPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(0.7); opacity: 0.55; } }
+        @keyframes bootSlide { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+        @media (prefers-reduced-motion: reduce) { .boot-mark::after, .boot-bar i { animation: none; } }
+
+        /* syntax colours for the code panel (CSS Custom Highlight API) */
+        ::highlight(sx-comment) { color: #55695f; }
+        ::highlight(sx-string)  { color: #8de9a8; }
+        ::highlight(sx-keyword) { color: #c79bff; }
+        ::highlight(sx-type)    { color: #ffd27a; }
+        ::highlight(sx-func)    { color: #7cc4ff; }
+        ::highlight(sx-number)  { color: #ff9e6b; }
+        ::highlight(sx-annot)   { color: #ff8bb4; }
+        ::highlight(sx-node)    { color: #6ee7d9; }
+    </style>
 </head>
 <body>
     <div id="app">
-        <div style="display:flex;height:100vh;align-items:center;justify-content:center;background:#0d0f0e;color:#4ade80;font-family:'Share Tech Mono',monospace;">
-            LOADING GODOT CHEATSHEET SYSTEM...
+        <div class="boot">
+            <div class="boot-mark"></div>
+            <div>LOADING GAMEDEV CHEATSHEET SYSTEM</div>
+            <div class="boot-bar"><i></i></div>
         </div>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+
+    <script>
+    /* Visual-only helpers. They read the DOM but never modify anything Blazor renders:
+       1) fill colour for range sliders (CSS variable on the input)
+       2) syntax colouring through CSS.highlights (no nodes are added or changed) */
+    (function () {
+        'use strict';
+
+        /* ---------- 1. range slider fill ---------- */
+        function paintRange(el) {
+            var min = parseFloat(el.min || '0'), max = parseFloat(el.max || '100'), v = parseFloat(el.value);
+            if (isNaN(v) || max === min) return;
+            el.style.setProperty('--fill', Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100)) + '%');
+        }
+        function paintRanges() {
+            var list = document.querySelectorAll('input[type="range"]:not(.vertical-slider)');
+            for (var i = 0; i < list.length; i++) paintRange(list[i]);
+        }
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.matches && e.target.matches('input[type="range"]:not(.vertical-slider)')) paintRange(e.target);
+        }, true);
+
+        /* ---------- 2. syntax colouring ---------- */
+        var canHighlight = typeof CSS !== 'undefined' && CSS.highlights && typeof Highlight !== 'undefined';
+        var KEYWORDS = new Set((
+            'extends class_name func var const signal enum static if elif else for while match break continue return pass await ' +
+            'in is as and or not void true false null self super preload export tool ' +
+            'using namespace public private protected internal partial override virtual abstract sealed readonly new this ' +
+            'int float bool string double long short byte char object void base get set foreach do switch case default ' +
+            'try catch finally throw async out ref params typeof nameof'
+        ).split(/\s+/));
+        var RE = new RegExp([
+            '(#[^\\n]*|\\/\\/[^\\n]*)',                              // 1 comment
+            '("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\')', // 2 string
+            '(@[A-Za-z_]\\w*)',                                      // 3 annotation
+            '([$%][A-Za-z_][\\w\\/]*)',                              // 4 node path
+            '\\b(\\d+(?:\\.\\d+)?[fFdDmM]?)\\b',                     // 5 number
+            '\\b([A-Za-z_]\\w*)\\b'                                  // 6 identifier
+        ].join('|'), 'g');
+
+        var last = { nodes: [], data: [] };
+
+        function tokenise(node, out) {
+            var text = node.data, m;
+            RE.lastIndex = 0;
+            while ((m = RE.exec(text)) !== null) {
+                var kind = null;
+                if (m[1] !== undefined) kind = 'comment';
+                else if (m[2] !== undefined) kind = 'string';
+                else if (m[3] !== undefined) kind = 'annot';
+                else if (m[4] !== undefined) kind = 'node';
+                else if (m[5] !== undefined) kind = 'number';
+                else if (m[6] !== undefined) {
+                    var w = m[6];
+                    if (KEYWORDS.has(w)) kind = /^(true|false|null|self)$/.test(w) ? 'number' : 'keyword';
+                    else if (text.charAt(m.index + w.length) === '(') kind = 'func';
+                    else if (/^[A-Z][A-Z0-9_]+$/.test(w)) kind = 'number';
+                    else if (/^[A-Z]/.test(w)) kind = 'type';
+                }
+                if (kind) {
+                    var r = new Range();
+                    r.setStart(node, m.index);
+                    r.setEnd(node, m.index + m[0].length);
+                    out[kind].push(r);
+                }
+            }
+        }
+
+        function paintCode() {
+            if (!canHighlight) return;
+            var codes = document.querySelectorAll('.code-display code');
+            var nodes = [], data = [];
+            for (var i = 0; i < codes.length; i++) {
+                var w = document.createTreeWalker(codes[i], NodeFilter.SHOW_TEXT), n;
+                while ((n = w.nextNode())) { nodes.push(n); data.push(n.data); }
+            }
+            var same = nodes.length === last.nodes.length;
+            for (var j = 0; same && j < nodes.length; j++) {
+                if (nodes[j] !== last.nodes[j] || data[j] !== last.data[j]) same = false;
+            }
+            if (same) return;
+            last = { nodes: nodes, data: data };
+
+            var out = { comment: [], string: [], keyword: [], type: [], func: [], number: [], annot: [], node: [] };
+            for (var k = 0; k < nodes.length; k++) tokenise(nodes[k], out);
+            Object.keys(out).forEach(function (key) {
+                if (out[key].length) {
+                    var h = new Highlight();
+                    out[key].forEach(function (r) { h.add(r); });
+                    CSS.highlights.set('sx-' + key, h);
+                } else {
+                    CSS.highlights.delete('sx-' + key);
+                }
+            });
+        }
+
+        /* ---------- schedule ---------- */
+        var queued = false;
+        function refresh() {
+            queued = false;
+            paintRanges();
+            paintCode();
+        }
+        function schedule() {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(refresh);
+        }
+        function start() {
+            new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true, characterData: true });
+            schedule();
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+    })();
+    </script>
 </body>
 </html>
