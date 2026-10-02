@@ -1,7 +1,13 @@
 @page "/sandbox"
 @implements IDisposable
+@inject IJSRuntime JS
 
-<div class="flex flex-col min-h-screen bg-terminal-0 text-[#d6e1da] font-mono select-none">
+<div class="flex flex-col min-h-screen bg-terminal-0 text-[#d6e1da] font-mono select-none outline-none"
+     tabindex="0"
+     @onkeydown="HandleKeyDown"
+     @onkeyup="HandleKeyUp"
+     autofocus>
+
     <!-- TOP STATUS & ROUTE BAR -->
     <header class="flex-none h-[46px] flex items-center justify-between px-5 text-xs bg-gradient-to-b from-white/[0.025] to-transparent border-b border-line">
         <div class="flex items-center gap-3 min-w-0">
@@ -14,7 +20,7 @@
                 GameDev Cheatsheet
             </span>
             <span class="text-[#6a7e73] whitespace-nowrap overflow-hidden text-ellipsis">
-                — Physics & Kinematics Sandbox
+                — Interactive Demo Game & Sandbox Level Designer
             </span>
         </div>
 
@@ -32,145 +38,428 @@
     </header>
 
     <!-- MAIN SANDBOX VIEW -->
-    <main class="flex-1 p-4 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4 max-w-7xl mx-auto w-full">
+    <main class="flex-1 p-3.5 grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-3 max-w-7xl mx-auto w-full">
         <!-- SANDBOX CANVAS STAGE -->
-        <div class="relative bg-terminal-1 border border-line rounded-xl flex flex-col overflow-hidden min-h-[460px]">
-            <div class="h-[38px] px-4 flex items-center justify-between border-b border-line text-xs font-semibold text-accent">
-                <span>SIMULATION STAGE</span>
-                <span class="text-[#6a7e73] font-normal">CLICK ANYWHERE TO SPAWN BALL</span>
+        <div class="relative bg-terminal-1 border border-line rounded-xl flex flex-col overflow-hidden min-h-[500px]">
+            <!-- Canvas Toolbar -->
+            <div class="h-[44px] px-4 flex items-center justify-between border-b border-line bg-terminal-1/90 backdrop-blur text-xs">
+                <!-- Mode & Tool Selector -->
+                <div class="flex items-center gap-2">
+                    <span class="text-accent font-semibold mr-1">TOOL:</span>
+                    <button class="px-2.5 py-1 rounded text-[11px] font-semibold border transition-all @(currentTool == ToolMode.Platform ? "bg-accent-bg border-accent text-accent" : "border-line-2 text-[#9db0a5] hover:text-white")"
+                            @onclick="() => currentTool = ToolMode.Platform">
+                        [+] PLATFORM
+                    </button>
+                    <button class="px-2.5 py-1 rounded text-[11px] font-semibold border transition-all @(currentTool == ToolMode.Hazard ? "bg-red-500/20 border-red-500 text-red-300" : "border-line-2 text-[#9db0a5] hover:text-white")"
+                            @onclick="() => currentTool = ToolMode.Hazard">
+                        [!] SPIKE
+                    </button>
+                    <button class="px-2.5 py-1 rounded text-[11px] font-semibold border transition-all @(currentTool == ToolMode.Coin ? "bg-amber-500/20 border-amber-500 text-amber-300" : "border-line-2 text-[#9db0a5] hover:text-white")"
+                            @onclick="() => currentTool = ToolMode.Coin">
+                        [★] COIN
+                    </button>
+                    <button class="px-2.5 py-1 rounded text-[11px] font-semibold border transition-all @(currentTool == ToolMode.Erase ? "bg-white/10 border-white text-white" : "border-line-2 text-[#9db0a5] hover:text-white")"
+                            @onclick="() => currentTool = ToolMode.Erase">
+                        [✕] ERASE
+                    </button>
+                </div>
+
+                <!-- Map Actions -->
+                <div class="flex items-center gap-2 text-[11px]">
+                    <button class="px-2 py-0.5 rounded border border-line-2 hover:border-line-3 text-[#9db0a5] hover:text-white"
+                            @onclick="LoadDefaultLayout">
+                        DEFAULT MAP
+                    </button>
+                    <button class="px-2 py-0.5 rounded border border-line-2 hover:border-line-3 text-[#9db0a5] hover:text-white"
+                            @onclick="ClearMap">
+                        CLEAR
+                    </button>
+                    <button class="px-2 py-0.5 rounded bg-accent-bg border border-accent-line text-accent font-semibold"
+                            @onclick="RespawnPlayer">
+                        RESET PLAYER
+                    </button>
+                </div>
             </div>
 
-            <div class="relative flex-1 bg-[#060907] cursor-crosshair overflow-hidden" @onmousedown="SpawnBall">
-                <svg width="100%" height="100%" viewBox="0 0 800 440" class="absolute inset-0">
+            <!-- Interactive Viewport Stage -->
+            <div class="relative flex-1 bg-[#060907] overflow-hidden cursor-crosshair select-none">
+                <svg id="sandboxSvgCanvas"
+                    width="100%" 
+                    height="100%" 
+                    viewBox="0 0 860 480" 
+                    preserveAspectRatio="none"
+                    class="absolute inset-0 w-full h-full"
+                    @onmousedown="HandleCanvasClick">
                     <defs>
-                        <pattern id="sandboxGrid" width="32" height="32" patternUnits="userSpaceOnUse">
-                            <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#0e150e" stroke-width="0.8" />
+                        <pattern id="sandboxMapGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0e150e" stroke-width="0.8" />
                         </pattern>
                     </defs>
-                    <rect width="800" height="440" fill="url(#sandboxGrid)" />
+                    <rect width="860" height="480" fill="url(#sandboxMapGrid)" pointer-events="all" />
 
-                    <!-- Floor & Walls -->
-                    <line x1="0" y1="410" x2="800" y2="410" stroke="#2a4a2a" stroke-width="2" />
+                    <!-- Fixed Boundary Floor -->
+                    <line x1="0" y1="460" x2="860" y2="460" stroke="#2a4a2a" stroke-width="2.5" pointer-events="none" />
 
-                    <!-- Bouncer Obstacles -->
-                    <rect x="220" y="260" width="100" height="16" fill="#152618" stroke="#3a6a3a" rx="4" />
-                    <rect x="480" y="200" width="120" height="16" fill="#152618" stroke="#3a6a3a" rx="4" />
-
-                    <!-- Live Physics Particles -->
-                    @foreach (var b in balls)
+                    <!-- Custom Drawn Platforms -->
+                    @foreach (var p in platforms)
                     {
-                        <circle cx="@b.X" cy="@b.Y" r="@b.Radius" fill="#4ade80" stroke="#86ffbf" stroke-width="1.5" />
-                        <line x1="@b.X" y1="@b.Y" x2="@(b.X + b.Vx * 0.05)" y2="@(b.Y + b.Vy * 0.05)" stroke="rgba(255,203,107,0.7)" stroke-width="1.5" />
+                        <g pointer-events="none">
+                            <rect x="@p.X" y="@p.Y" width="@p.W" height="@p.H" fill="#142417" stroke="#366b3b" stroke-width="1.5" rx="3" />
+                            <line x1="@p.X" y1="@p.Y" x2="@(p.X + p.W)" y2="@p.Y" stroke="#4ade80" stroke-width="2.5" />
+                        </g>
                     }
+
+                    <!-- Hazards / Spikes -->
+                    @foreach (var h in hazards)
+                    {
+                        <polygon points="@(h.X),@(h.Y + 20) @(h.X + 15),@(h.Y) @(h.X + 30),@(h.Y + 20)" 
+                                 fill="rgba(255, 68, 68, 0.4)" stroke="#ff4444" stroke-width="1.5" pointer-events="none" />
+                    }
+
+                    <!-- Collectible Coins -->
+                    @foreach (var c in coins)
+                    {
+                        <circle cx="@c.X" cy="@c.Y" r="8" fill="#ffd07a" stroke="#ffa500" stroke-width="1.5" pointer-events="none">
+                            <animate attributeName="r" values="8;9.5;8" dur="1.2s" repeatCount="indefinite" />
+                        </circle>
+                    }
+
+                    <!-- Playable Character Body -->
+                    @{
+                        double eyeX = playerFacing > 0 ? (playerX + 3) : (playerX - 7);
+                    }
+                    <g pointer-events="none">
+                        <rect x="@(playerX - 10)" y="@(playerY - 26)" width="20" height="28" fill="#090f0a" rx="2" />
+                        <rect x="@(playerX - 8)" y="@(playerY - 24)" width="16" height="24" 
+                              fill="@(playerFlash ? "#ff4444" : "#4ade80")" stroke="#86ffbf" stroke-width="1.2" rx="2" />
+                        <rect x="@eyeX" y="@(playerY - 18)" width="4" height="4" fill="#090f0a" />
+                        <text x="@playerX" y="@(playerY - 32)" fill="#86ffbf" font-family="'JetBrains Mono', monospace" font-size="9" text-anchor="middle">
+                            @(onFloor ? (playerVx != 0 ? "RUN" : "IDLE") : (playerVy < 0 ? "JUMP" : "FALL"))
+                        </text>
+                    </g>
                 </svg>
 
-                <div class="absolute bottom-3 left-4 text-[10.5px] text-[#5a7a58]">
-                    BODIES: @balls.Count | GRAVITY: @((int)gravity) px/s² | RESTITUTION: @restitution.ToString("0.00")
+                <!-- In-Game HUD Overlay -->
+                <div class="absolute top-3 left-4 flex gap-4 text-xs font-semibold bg-terminal-0/80 backdrop-blur px-3 py-1.5 rounded border border-line-2 pointer-events-none">
+                    <span class="text-accent">SCORE: @score</span>
+                    <span class="text-red-400">DEATHS: @deaths</span>
+                    <span class="text-amber-300">COINS REMAINING: @coins.Count</span>
+                </div>
+
+                <!-- Navigation Controls Help Tag -->
+                <div class="absolute bottom-3 left-4 text-[10.5px] text-[#5a7a58] pointer-events-none">
+                    CONTROLS: [A / D] WALK · [SPACE] JUMP · CLICK CANVAS TO USE SELECTED EDIT TOOL
                 </div>
             </div>
         </div>
 
-        <!-- CONTROL PANEL -->
-        <aside class="bg-terminal-1 border border-line rounded-xl p-4 flex flex-col gap-4 text-xs">
-            <div class="border-b border-line pb-2 font-semibold text-accent tracking-wider uppercase text-[11px]">
-                Physics Parameters
+        <!-- GODOT LIVE INSPECTOR PANEL -->
+        <aside class="bg-terminal-1 border border-line rounded-xl p-4 flex flex-col gap-4 text-xs overflow-y-auto">
+            <div class="border-b border-line pb-2 flex justify-between items-center">
+                <span class="font-semibold text-accent tracking-wider uppercase text-[11px]">Godot 4 Player Variables</span>
+                <span class="text-[10px] text-[#6a7e73]">CharacterBody2D</span>
             </div>
 
-            <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                    <span class="text-[#9db0a5]">Gravity (px/s²)</span>
-                    <span class="text-accent font-semibold">@((int)gravity)</span>
+            <!-- Sliders -->
+            <div class="space-y-3.5">
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-[#9db0a5]">Move Speed (px/s)</span>
+                        <span class="text-accent font-semibold">@((int)speed)</span>
+                    </div>
+                    <input type="range" min="100" max="500" step="10" @bind="speed" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
                 </div>
-                <input type="range" min="0" max="2500" step="50" @bind="gravity" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
-            </div>
 
-            <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                    <span class="text-[#9db0a5]">Restitution (Bounciness)</span>
-                    <span class="text-accent font-semibold">@restitution.ToString("0.00")</span>
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-[#9db0a5]">Jump Velocity</span>
+                        <span class="text-accent font-semibold">@((int)jumpVelocity)</span>
+                    </div>
+                    <input type="range" min="200" max="750" step="10" @bind="jumpVelocity" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
                 </div>
-                <input type="range" min="0.1" max="0.95" step="0.05" @bind="restitution" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
-            </div>
 
-            <div>
-                <div class="flex justify-between text-[11px] mb-1">
-                    <span class="text-[#9db0a5]">Friction Dampening</span>
-                    <span class="text-accent font-semibold">@friction.ToString("0.00")</span>
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-[#9db0a5]">Gravity Scale</span>
+                        <span class="text-accent font-semibold">@((int)gravity)</span>
+                    </div>
+                    <input type="range" min="300" max="2200" step="50" @bind="gravity" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
                 </div>
-                <input type="range" min="0.80" max="0.99" step="0.01" @bind="friction" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
+
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-[#9db0a5]">Acceleration Lerp</span>
+                        <span class="text-accent font-semibold">@((int)acceleration)</span>
+                    </div>
+                    <input type="range" min="400" max="3000" step="100" @bind="acceleration" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
+                </div>
+
+                <div>
+                    <div class="flex justify-between text-[11px] mb-1">
+                        <span class="text-[#9db0a5]">Friction Decel</span>
+                        <span class="text-accent font-semibold">@((int)friction)</span>
+                    </div>
+                    <input type="range" min="400" max="3000" step="100" @bind="friction" @bind:event="oninput" class="w-full accent-accent cursor-pointer" />
+                </div>
             </div>
 
-            <div class="pt-2 border-t border-line flex flex-col gap-2">
-                <button class="h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
-                        @onclick="BurstSpawn">
-                    BURST SPAWN (x5)
-                </button>
-                <button class="h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all"
-                        @onclick="() => balls.Clear()">
-                    CLEAR ALL BODIES
-                </button>
+            <!-- Godot Script Live Export -->
+            <div class="border-t border-line pt-3 flex flex-col flex-1">
+                <div class="flex justify-between items-center mb-1.5">
+                    <span class="text-[10px] text-[#6a7e73] font-semibold tracking-wider uppercase">EXPORTED GODOT SCRIPT</span>
+                    <button class="text-[10px] text-accent hover:underline font-semibold" @onclick="CopyGodotScript">
+                        [COPY CODE]
+                    </button>
+                </div>
+                <div class="bg-terminal-0 border border-line-2 rounded p-2.5 text-[10px] text-[#8ecbff] font-mono overflow-auto flex-1 max-h-[160px] select-text">
+                    <pre><code>extends CharacterBody2D
+
+const SPEED = @speed.ToString("0.0")
+const JUMP_VELOCITY = -@jumpVelocity.ToString("0.0")
+const ACCELERATION = @acceleration.ToString("0.0")
+const FRICTION = @friction.ToString("0.0")
+
+var gravity = @gravity.ToString("0.0")
+
+func _physics_process(delta: float) -> void:
+    if not is_on_floor():
+        velocity.y += gravity * delta
+
+    if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+        velocity.y = JUMP_VELOCITY
+
+    var direction := Input.get_axis("ui_left", "ui_right")
+    if direction:
+        velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
+    else:
+        velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+
+    move_and_slide()</code></pre>
+                </div>
             </div>
         </aside>
     </main>
 </div>
 
 @code {
-    public class Ball { public double X; public double Y; public double Vx; public double Vy; public double Radius = 9; }
-    private readonly List<Ball> balls = new();
+    private enum ToolMode { Platform, Hazard, Coin, Erase }
+    private ToolMode currentTool = ToolMode.Platform;
 
-    private double gravity = 980;
-    private double restitution = 0.70;
-    private double friction = 0.96;
+    public record PlatformBlock(double X, double Y, double W, double H);
+    public record HazardBlock(double X, double Y);
+    public record CoinItem(double X, double Y);
+
+    private List<PlatformBlock> platforms = new();
+    private List<HazardBlock> hazards = new();
+    private List<CoinItem> coins = new();
+
+    private double playerX = 100;
+    private double playerY = 380;
+    private double playerVx = 0;
+    private double playerVy = 0;
+    private int playerFacing = 1;
+    private bool onFloor = false;
+    private bool playerFlash = false;
+    private int score = 0;
+    private int deaths = 0;
+
+    private double speed = 260.0;
+    private double jumpVelocity = 480.0;
+    private double gravity = 1100.0;
+    private double acceleration = 1800.0;
+    private double friction = 1400.0;
+
+    private bool keyLeft = false;
+    private bool keyRight = false;
+    private bool jumpBuffered = false;
 
     private CancellationTokenSource cts = new();
 
-    protected override void OnInitialized()
+    public class SvgPointResult
     {
-        _ = RunSandboxPhysicsAsync(cts.Token);
+        public double X { get; set; }
+        public double Y { get; set; }
     }
 
-    private async Task RunSandboxPhysicsAsync(CancellationToken token)
+    protected override void OnInitialized()
+    {
+        LoadDefaultLayout();
+        _ = RunGameLoopAsync(cts.Token);
+    }
+
+    private void LoadDefaultLayout()
+    {
+        platforms = new List<PlatformBlock>
+        {
+            new(60, 360, 140, 16),
+            new(260, 300, 120, 16),
+            new(440, 240, 140, 16),
+            new(640, 180, 120, 16),
+            new(320, 140, 100, 16)
+        };
+
+        hazards = new List<HazardBlock>
+        {
+            new(290, 440),
+            new(330, 440),
+            new(500, 440)
+        };
+
+        coins = new List<CoinItem>
+        {
+            new(130, 330),
+            new(320, 270),
+            new(510, 210),
+            new(700, 150),
+            new(370, 110)
+        };
+
+        RespawnPlayer();
+    }
+
+    private void ClearMap()
+    {
+        platforms.Clear();
+        hazards.Clear();
+        coins.Clear();
+    }
+
+    private void RespawnPlayer()
+    {
+        playerX = 90;
+        playerY = 320;
+        playerVx = 0;
+        playerVy = 0;
+    }
+
+    private async Task HandleCanvasClick(MouseEventArgs e)
+    {
+        double targetSvgX;
+        double targetSvgY;
+
+        try
+        {
+            // Exact native SVG coordinate transform matrix conversion
+            var pt = await JS.InvokeAsync<SvgPointResult>("eval", 
+                $@"(() => {{
+                    const svg = document.getElementById('sandboxSvgCanvas');
+                    if (!svg) return {{ x: {e.ClientX}, y: {e.ClientY} }};
+                    let point = svg.createSVGPoint();
+                    point.x = {e.ClientX};
+                    point.y = {e.ClientY};
+                    let ctm = svg.getScreenCTM();
+                    if (!ctm) return {{ x: {e.ClientX}, y: {e.ClientY} }};
+                    let transformed = point.matrixTransform(ctm.inverse());
+                    return {{ x: transformed.x, y: transformed.y }};
+                }})()");
+
+            targetSvgX = pt.X;
+            targetSvgY = pt.Y;
+        }
+        catch
+        {
+            targetSvgX = e.OffsetX;
+            targetSvgY = e.OffsetY;
+        }
+
+        // Snap to 20px grid increments
+        double clickX = Math.Round(targetSvgX / 20.0) * 20.0;
+        double clickY = Math.Round(targetSvgY / 20.0) * 20.0;
+
+        clickX = Math.Clamp(clickX, 30, 830);
+        clickY = Math.Clamp(clickY, 30, 450);
+
+        switch (currentTool)
+        {
+            case ToolMode.Platform:
+                platforms.Add(new PlatformBlock(clickX - 40, clickY, 80, 16));
+                break;
+            case ToolMode.Hazard:
+                hazards.Add(new HazardBlock(clickX - 15, clickY - 20));
+                break;
+            case ToolMode.Coin:
+                coins.Add(new CoinItem(clickX, clickY));
+                break;
+            case ToolMode.Erase:
+                platforms.RemoveAll(p => Math.Abs(p.X + p.W / 2 - clickX) < 55 && Math.Abs(p.Y - clickY) < 30);
+                hazards.RemoveAll(h => Math.Abs(h.X + 15 - clickX) < 30 && Math.Abs(h.Y + 10 - clickY) < 30);
+                coins.RemoveAll(c => Math.Abs(c.X - clickX) < 25 && Math.Abs(c.Y - clickY) < 25);
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task RunGameLoopAsync(CancellationToken token)
     {
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(16));
-        DateTime last = DateTime.UtcNow;
+        DateTime lastTime = DateTime.UtcNow;
 
         while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
         {
             DateTime now = DateTime.UtcNow;
-            double dt = Math.Min((now - last).TotalSeconds, 0.05);
-            last = now;
+            double dt = Math.Min((now - lastTime).TotalSeconds, 0.05);
+            lastTime = now;
 
-            for (int i = balls.Count - 1; i >= 0; i--)
+            double targetVx = 0;
+            if (keyLeft) { targetVx = -speed; playerFacing = -1; }
+            if (keyRight) { targetVx = speed; playerFacing = 1; }
+
+            if (targetVx != 0)
+                playerVx = Math.Clamp(playerVx + Math.Sign(targetVx - playerVx) * acceleration * dt, -speed, speed);
+            else
+                playerVx = Math.Sign(playerVx) * Math.Max(0, Math.Abs(playerVx) - friction * dt);
+
+            playerVy += gravity * dt;
+
+            if (jumpBuffered && onFloor)
             {
-                var b = balls[i];
-                b.Vy += gravity * dt;
-                b.X += b.Vx * dt;
-                b.Y += b.Vy * dt;
+                playerVy = -jumpVelocity;
+                jumpBuffered = false;
+                onFloor = false;
+            }
 
-                // Floor bounce
-                if (b.Y >= 410 - b.Radius)
+            playerX = Math.Clamp(playerX + playerVx * dt, 12, 848);
+            playerY += playerVy * dt;
+
+            onFloor = false;
+            if (playerY >= 460)
+            {
+                playerY = 460;
+                playerVy = 0;
+                onFloor = true;
+            }
+
+            foreach (var p in platforms)
+            {
+                if (playerX + 8 > p.X && playerX - 8 < p.X + p.W &&
+                    playerY >= p.Y && playerY <= p.Y + 14 && playerVy >= 0)
                 {
-                    b.Y = 410 - b.Radius;
-                    b.Vy = -b.Vy * restitution;
-                    b.Vx *= friction;
+                    playerY = p.Y;
+                    playerVy = 0;
+                    onFloor = true;
                 }
+            }
 
-                // Walls
-                if (b.X <= b.Radius) { b.X = b.Radius; b.Vx = -b.Vx * restitution; }
-                if (b.X >= 800 - b.Radius) { b.X = 800 - b.Radius; b.Vx = -b.Vx * restitution; }
-
-                // Obstacle 1 (220 to 320, Y=260)
-                if (b.X >= 215 && b.X <= 325 && b.Y >= 250 && b.Y <= 276 && b.Vy > 0)
+            foreach (var h in hazards)
+            {
+                if (Math.Abs(playerX - (h.X + 15)) < 16 && Math.Abs(playerY - (h.Y + 10)) < 16)
                 {
-                    b.Y = 250;
-                    b.Vy = -b.Vy * restitution;
+                    deaths++;
+                    playerFlash = true;
+                    RespawnPlayer();
+                    _ = Task.Delay(200).ContinueWith(_ => { playerFlash = false; InvokeAsync(StateHasChanged); });
+                    break;
                 }
+            }
 
-                // Obstacle 2 (480 to 600, Y=200)
-                if (b.X >= 475 && b.X <= 605 && b.Y >= 190 && b.Y <= 216 && b.Vy > 0)
+            for (int i = coins.Count - 1; i >= 0; i--)
+            {
+                var c = coins[i];
+                if (Math.Abs(playerX - c.X) < 18 && Math.Abs(playerY - 12 - c.Y) < 18)
                 {
-                    b.Y = 190;
-                    b.Vy = -b.Vy * restitution;
+                    score += 100;
+                    coins.RemoveAt(i);
                 }
             }
 
@@ -178,29 +467,53 @@
         }
     }
 
-    private void SpawnBall(MouseEventArgs e)
+    private void HandleKeyDown(KeyboardEventArgs e)
     {
-        balls.Add(new Ball
-        {
-            X = Math.Clamp(e.OffsetX, 20, 780),
-            Y = Math.Clamp(e.OffsetY, 20, 380),
-            Vx = Random.Shared.Next(-200, 200),
-            Vy = Random.Shared.Next(-100, 50)
-        });
+        if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase))
+            keyLeft = true;
+        else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase))
+            keyRight = true;
+        else if (e.Key.Equals(" ", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("w", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase))
+            jumpBuffered = true;
     }
 
-    private void BurstSpawn()
+    private void HandleKeyUp(KeyboardEventArgs e)
     {
-        for (int i = 0; i < 5; i++)
-        {
-            balls.Add(new Ball
-            {
-                X = 400 + Random.Shared.Next(-80, 80),
-                Y = 60 + Random.Shared.Next(-20, 20),
-                Vx = Random.Shared.Next(-300, 300),
-                Vy = Random.Shared.Next(-150, 0)
-            });
-        }
+        if (e.Key.Equals("a", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowLeft", StringComparison.OrdinalIgnoreCase))
+            keyLeft = false;
+        else if (e.Key.Equals("d", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowRight", StringComparison.OrdinalIgnoreCase))
+            keyRight = false;
+        else if (e.Key.Equals(" ", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("w", StringComparison.OrdinalIgnoreCase) || e.Key.Equals("ArrowUp", StringComparison.OrdinalIgnoreCase))
+            jumpBuffered = false;
+    }
+
+    private async Task CopyGodotScript()
+    {
+        string script = $@"extends CharacterBody2D
+
+const SPEED = {speed:F1}
+const JUMP_VELOCITY = -{jumpVelocity:F1}
+const ACCELERATION = {acceleration:F1}
+const FRICTION = {friction:F1}
+
+var gravity = {gravity:F1}
+
+func _physics_process(delta: float) -> void:
+    if not is_on_floor():
+        velocity.y += gravity * delta
+
+    if Input.is_action_just_pressed(""ui_accept"") and is_on_floor():
+        velocity.y = JUMP_VELOCITY
+
+    var direction := Input.get_axis(""ui_left"", ""ui_right"")
+    if direction:
+        velocity.x = move_toward(velocity.x, direction * SPEED, ACCELERATION * delta)
+    else:
+        velocity.x = move_toward(velocity.x, 0, FRICTION * delta)
+
+    move_and_slide()";
+
+        await JS.InvokeVoidAsync("eval", $"navigator.clipboard.writeText({System.Text.Json.JsonSerializer.Serialize(script)})");
     }
 
     public void Dispose()
