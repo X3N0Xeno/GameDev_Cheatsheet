@@ -10,6 +10,50 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        terminal: {
+                            0: '#050807',
+                            1: '#0a0f0d',
+                            2: '#0e1512',
+                            3: '#141d19',
+                            4: '#1a2621'
+                        },
+                        line: {
+                            DEFAULT: '#15201b',
+                            2: '#1e2d26',
+                            3: '#2a3f35'
+                        },
+                        accent: {
+                            DEFAULT: '#2ee586',
+                            2: '#6ff3ae',
+                            bg: 'rgba(46, 229, 134, 0.10)',
+                            'bg-2': 'rgba(46, 229, 134, 0.16)',
+                            line: 'rgba(46, 229, 134, 0.38)'
+                        },
+                        ui: {
+                            red: '#ff5c5c',
+                            amber: '#f2b33d',
+                            blue: '#4db8ff',
+                            violet: '#a78bfa'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'SF Mono', 'Cascadia Code', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Keep existing sheets during gradual migration -->
     <link rel="stylesheet" href="css/layout.css" />
     <link rel="stylesheet" href="css/component.css" />
 
@@ -79,7 +123,7 @@
         ::highlight(sx-node)    { color: #6ee7d9; }
     </style>
 </head>
-<body>
+<body class="bg-terminal-0 text-[#d6e1da] font-mono selection:bg-accent/30 selection:text-white">
     <div id="app">
         <div class="boot">
             <div class="boot-mark"></div>
@@ -90,13 +134,8 @@
     <script src="_framework/blazor.webassembly.js"></script>
 
     <script>
-    /* Visual-only helpers. They read the DOM but never modify anything Blazor renders:
-       1) fill colour for range sliders (CSS variable on the input)
-       2) syntax colouring through CSS.highlights (no nodes are added or changed) */
     (function () {
         'use strict';
-
-        /* ---------- 1. range slider fill ---------- */
         function paintRange(el) {
             var min = parseFloat(el.min || '0'), max = parseFloat(el.max || '100'), v = parseFloat(el.value);
             if (isNaN(v) || max === min) return;
@@ -110,7 +149,6 @@
             if (e.target && e.target.matches && e.target.matches('input[type="range"]:not(.vertical-slider)')) paintRange(e.target);
         }, true);
 
-        /* ---------- 2. syntax colouring ---------- */
         var canHighlight = typeof CSS !== 'undefined' && CSS.highlights && typeof Highlight !== 'undefined';
         var KEYWORDS = new Set((
             'extends class_name func var const signal enum static if elif else for while match break continue return pass await ' +
@@ -120,12 +158,12 @@
             'try catch finally throw async out ref params typeof nameof'
         ).split(/\s+/));
         var RE = new RegExp([
-            '(#[^\\n]*|\\/\\/[^\\n]*)',                              // 1 comment
-            '("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\')', // 2 string
-            '(@[A-Za-z_]\\w*)',                                      // 3 annotation
-            '([$%][A-Za-z_][\\w\\/]*)',                              // 4 node path
-            '\\b(\\d+(?:\\.\\d+)?[fFdDmM]?)\\b',                     // 5 number
-            '\\b([A-Za-z_]\\w*)\\b'                                  // 6 identifier
+            '(#[^\\n]*|\\/\\/[^\\n]*)',
+            '("(?:[^"\\\\\\n]|\\\\.)*"|\'(?:[^\'\\\\\\n]|\\\\.)*\')',
+            '(@[A-Za-z_]\\w*)',
+            '([$%][A-Za-z_][\\w\\/]*)',
+            '\\b(\\d+(?:\\.\\d+)?[fFdDmM]?)\\b',
+            '\\b([A-Za-z_]\\w*)\\b'
         ].join('|'), 'g');
 
         var last = { nodes: [], data: [] };
@@ -184,7 +222,6 @@
             });
         }
 
-        /* ---------- schedule ---------- */
         var queued = false;
         function refresh() {
             queued = false;
