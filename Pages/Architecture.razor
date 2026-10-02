@@ -1,0 +1,106 @@
+@page "/architecture"
+
+<div class="flex flex-col min-h-screen bg-terminal-0 text-[#d6e1da] font-mono select-none">
+    <!-- TOP STATUS & ROUTE BAR -->
+    <header class="flex-none h-[46px] flex items-center justify-between px-5 text-xs bg-gradient-to-b from-white/[0.025] to-transparent border-b border-line">
+        <div class="flex items-center gap-3 min-w-0">
+            <div class="flex items-center gap-2 mr-3 opacity-80">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57] inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e] inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28c840] inline-block"></span>
+            </div>
+            <span class="text-accent font-semibold tracking-wide whitespace-nowrap pl-3 border-l border-line-2 leading-5">
+                GameDev Cheatsheet
+            </span>
+            <span class="text-[#6a7e73] whitespace-nowrap overflow-hidden text-ellipsis">
+                — Technical Architecture & Engine Manual
+            </span>
+        </div>
+
+        <nav class="flex items-center gap-2 text-[11px]">
+            <a href="/" class="px-3 py-1 rounded-md text-[#9db0a5] hover:text-white hover:bg-white/5 border border-transparent transition-colors">
+                [CHEATSHEET]
+            </a>
+            <a href="/architecture" class="px-3 py-1 rounded-md bg-accent-bg text-accent border border-accent-line font-semibold transition-colors">
+                [ARCHITECTURE]
+            </a>
+            <a href="/sandbox" class="px-3 py-1 rounded-md text-[#9db0a5] hover:text-white hover:bg-white/5 border border-transparent transition-colors">
+                [SANDBOX]
+            </a>
+        </nav>
+    </header>
+
+    <!-- CONTENT BODY -->
+    <main class="flex-1 p-6 max-w-5xl mx-auto w-full space-y-6">
+        <!-- HEADER HERO -->
+        <div class="p-6 bg-terminal-1 border border-line rounded-xl">
+            <span class="text-accent text-[10px] tracking-[0.25em] font-semibold uppercase">SPECIFICATION SHEET REV_B</span>
+            <h1 class="text-2xl font-bold text-white mt-1">Platform Architecture & Physics Calculus</h1>
+            <p class="text-xs text-[#9db0a5] mt-2 leading-relaxed">
+                The GameDev Cheatsheet executes pure C# simulations compiled to WebAssembly via .NET 10. All physics integration, state machines, and mathematical transformations run client-side with zero external JavaScript game engines.
+            </p>
+        </div>
+
+        <!-- 3-PILLAR GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- PILLAR 1 -->
+            <div class="p-5 bg-terminal-1 border border-line rounded-xl flex flex-col justify-between">
+                <div>
+                    <span class="text-accent text-xs font-semibold">01 // KINEMATICS</span>
+                    <h3 class="text-sm font-bold text-white mt-1">Semi-Implicit Euler Loop</h3>
+                    <p class="text-xs text-[#9db0a5] mt-2 leading-relaxed">
+                        Projectiles and movement controllers advance at 60 FPS using a hardware-independent <code class="text-accent font-mono text-[11px]">PeriodicTimer(16ms)</code>.
+                    </p>
+                    <div class="bg-terminal-0 p-3 rounded border border-line-2 font-mono text-[10.5px] text-[#8ecbff] mt-3">
+                        v_y += g * dt<br />
+                        x += v_x * dt<br />
+                        y += v_y * dt
+                    </div>
+                </div>
+            </div>
+
+            <!-- PILLAR 2 -->
+            <div class="p-5 bg-terminal-1 border border-line rounded-xl flex flex-col justify-between">
+                <div>
+                    <span class="text-accent text-xs font-semibold">02 // FUZZY SETS</span>
+                    <h3 class="text-sm font-bold text-white mt-1">Centroid Defuzzification</h3>
+                    <p class="text-xs text-[#9db0a5] mt-2 leading-relaxed">
+                        The celestial sky cycle evaluates continuous membership functions across Dawn, Noon, Dusk, and Night, smoothly interpolating RGB gradients without step popping.
+                    </p>
+                    <div class="bg-terminal-0 p-3 rounded border border-line-2 font-mono text-[10.5px] text-[#8ecbff] mt-3">
+                        C(t) = ∑(μ_i(t) * C_i) / ∑(μ_i(t))
+                    </div>
+                </div>
+            </div>
+
+            <!-- PILLAR 3 -->
+            <div class="p-5 bg-terminal-1 border border-line rounded-xl flex flex-col justify-between">
+                <div>
+                    <span class="text-accent text-xs font-semibold">03 // COMBAT FSM</span>
+                    <h3 class="text-sm font-bold text-white mt-1">Frame Advantage Calculus</h3>
+                    <p class="text-xs text-[#9db0a5] mt-2 leading-relaxed">
+                        Footsies logic runs on a 60 FPS frame counter. Priority hit detection validates active hurtbox overlaps against remaining recovery frames.
+                    </p>
+                    <div class="bg-terminal-0 p-3 rounded border border-line-2 font-mono text-[10.5px] text-[#8ecbff] mt-3">
+                        Adv = Hitstun - Recovery_Rem
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GODOT 4 INTEGRATION BREAKDOWN -->
+        <div class="p-6 bg-terminal-1 border border-line rounded-xl">
+            <h2 class="text-sm font-semibold tracking-wider text-accent uppercase mb-3">Godot 4.x Engine Conventions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-[#9db0a5]">
+                <div class="p-4 bg-terminal-0 rounded border border-line-2">
+                    <h4 class="font-bold text-white mb-1">CharacterBody2D / 3D Decoupling</h4>
+                    <p>Physics process uses <code class="text-accent">move_and_slide()</code> with accumulated velocity vectors rather than translating nodes directly, guaranteeing continuous collision response.</p>
+                </div>
+                <div class="p-4 bg-terminal-0 rounded border border-line-2">
+                    <h4 class="font-bold text-white mb-1">Zero-Latency Raycast Updates</h4>
+                    <p>Hitscan weapons call <code class="text-accent">force_raycast_update()</code> immediately prior to queries, avoiding single-frame transform latency during rapid fire events.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>

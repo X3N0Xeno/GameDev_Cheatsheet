@@ -51,34 +51,71 @@
         
         <!-- 1. LEFT SIDEBAR -->
         <aside class="bg-terminal-1 border border-line rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_14px_36px_rgba(0,0,0,0.35)] overflow-y-auto flex flex-col">
-            <div class="sticky top-0 z-10 h-[42px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest bg-terminal-1/90 backdrop-blur border-b border-line text-accent">
-                <span>COMPONENT LIBRARY</span>
-                <span class="text-[#6a7e73] font-normal font-sans">⚙</span>
-            </div>
+            <!-- Sidebar Header & Batch Controls -->
+            <div class="sticky top-0 z-10 flex flex-col bg-terminal-1/90 backdrop-blur border-b border-line">
+                <div class="h-[38px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest text-accent">
+                    <span>COMPONENT LIBRARY</span>
+                    <div class="flex items-center gap-1.5 text-[9px] font-normal">
+                        <button class="hover:text-white text-[#6a7e73] transition-colors" @onclick="() => SetAllCategories(true)">[EXPAND]</button>
+                        <span class="text-line-3">/</span>
+                        <button class="hover:text-white text-[#6a7e73] transition-colors" @onclick="() => SetAllCategories(false)">[COLLAPSE]</button>
+                    </div>
+                </div>
 
-            <div class="flex-1 overflow-y-auto">
-                @foreach (var category in categories)
-                {
-                    <div class="border-b border-line last:border-b-0">
-                        <div class="p-3 px-4 text-[10.5px] tracking-wider text-[#9db0a5] flex items-center justify-between gap-2 font-semibold cursor-pointer hover:bg-white/[0.025] hover:text-white transition-colors"
-                             @onclick="() => category.IsExpanded = !category.IsExpanded">
-                            <span>@category.Icon @category.Name</span>
-                            <span class="text-xs transition-transform duration-200 @(category.IsExpanded ? "rotate-90 text-accent" : "text-[#465850]")">›</span>
-                        </div>
-                        @if (category.IsExpanded)
+                <!-- Live Search Filter -->
+                <div class="px-3 pb-2.5">
+                    <div class="relative flex items-center">
+                        <span class="absolute left-2.5 text-[10px] text-[#465850]">⌕</span>
+                        <input type="text" 
+                               placeholder="Filter components..." 
+                               value="@searchQuery"
+                               @oninput="HandleSearchInput"
+                               class="w-full h-[28px] pl-6 pr-2 bg-terminal-0 border border-line-2 rounded text-[11px] text-[#d6e1da] placeholder-[#465850] focus:border-accent-line focus:outline-none transition-colors" />
+                        @if (!string.IsNullOrWhiteSpace(searchQuery))
                         {
-                            <div class="flex flex-col gap-0.5 px-2 pb-3">
-                                @foreach (var item in category.Items)
-                                {
-                                    <div class="relative px-3 py-2 text-xs rounded-lg cursor-pointer transition-all @(selectedComponent.Id == item.Id ? "bg-gradient-to-r from-accent-bg-2 to-accent/5 text-accent font-semibold shadow-[inset_0_0_0_1px_rgba(46,229,134,0.22)]" : "text-[#9db0a5] hover:bg-white/[0.035] hover:text-white")"
-                                         @onclick="() => SelectComponent(item)">
-                                        <span class="mr-1 opacity-50">›</span>
-                                        @item.Title
-                                    </div>
-                                }
-                            </div>
+                            <button class="absolute right-2 text-[10px] text-[#6a7e73] hover:text-white" @onclick="ClearSearch">✕</button>
                         }
                     </div>
+                </div>
+            </div>
+
+            <!-- Category List -->
+            <div class="flex-1 overflow-y-auto">
+                @{
+                    var displayedCategories = GetFilteredCategories();
+                }
+
+                @if (!displayedCategories.Any())
+                {
+                    <div class="p-6 text-center text-xs text-[#6a7e73]">
+                        No components match "@searchQuery"
+                    </div>
+                }
+                else
+                {
+                    @foreach (var category in displayedCategories)
+                    {
+                        <div class="border-b border-line last:border-b-0">
+                            <div class="p-3 px-4 text-[10.5px] tracking-wider text-[#9db0a5] flex items-center justify-between gap-2 font-semibold cursor-pointer hover:bg-white/[0.025] hover:text-white transition-colors"
+                                 @onclick="() => category.IsExpanded = !category.IsExpanded">
+                                <span>@category.Icon @category.Name</span>
+                                <span class="text-xs transition-transform duration-200 @(category.IsExpanded ? "rotate-90 text-accent" : "text-[#465850]")">›</span>
+                            </div>
+                            @if (category.IsExpanded)
+                            {
+                                <div class="flex flex-col gap-0.5 px-2 pb-3">
+                                    @foreach (var item in category.Items)
+                                    {
+                                        <div class="relative px-3 py-2 text-xs rounded-lg cursor-pointer transition-all @(selectedComponent.Id == item.Id ? "bg-gradient-to-r from-accent-bg-2 to-accent/5 text-accent font-semibold shadow-[inset_0_0_0_1px_rgba(46,229,134,0.22)]" : "text-[#9db0a5] hover:bg-white/[0.035] hover:text-white")"
+                                             @onclick="() => SelectComponent(item)">
+                                            <span class="mr-1 opacity-50">›</span>
+                                            @item.Title
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
                 }
             </div>
         </aside>
@@ -1032,5 +1069,52 @@
             copyText = "COPY";
             StateHasChanged();
         }
+    }
+
+    // Search & Sidebar Filtering
+    private string searchQuery = "";
+
+    private void HandleSearchInput(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+    }
+
+    private void SetAllCategories(bool expanded)
+    {
+        foreach (var c in categories) c.IsExpanded = expanded;
+    }
+
+    private List<ComponentCategory> GetFilteredCategories()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return categories;
+
+        var term = searchQuery.Trim();
+        var results = new List<ComponentCategory>();
+
+        foreach (var cat in categories)
+        {
+            var matchingItems = cat.Items
+                .Where(i => i.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                            i.SubRoute.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                            i.Category.Contains(term, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (matchingItems.Any())
+            {
+                results.Add(new ComponentCategory
+                {
+                    Name = cat.Name,
+                    Icon = cat.Icon,
+                    IsExpanded = true, // auto-expand to show matches
+                    Items = matchingItems
+                });
+            }
+        }
+        return results;
     }
 }
