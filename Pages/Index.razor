@@ -4,58 +4,93 @@
 @using GameDevCheatsheet.Components.Previews
 @inject IJSRuntime JS
 
-<div class="app-container" tabindex="0" @onkeydown="HandleGlobalKeydown" @onkeyup="HandleGlobalKeyup" autofocus>
-    <!-- TOP STATUS BAR -->
-    <header class="top-bar">
-        <div class="top-bar-left">
-            <span class="brand">GameDev Component Cheatsheet</span>
-            <span class="sub-route">— @selectedComponent.SubRoute</span>
-        </div>
-        <div class="top-bar-right">
-            <span>GODOT 4.x SDK REV_B</span>
-        </div>
-    </header>
+<div class="flex flex-col h-screen outline-none bg-terminal-0 text-[#d6e1da] font-mono select-none" 
+     tabindex="0" 
+     @onkeydown="HandleGlobalKeydown" 
+     @onkeyup="HandleGlobalKeyup" 
+     autofocus>
 
-    <div class="main-layout">
-        <!-- 1. LEFT SIDEBAR -->
-        <aside class="sidebar">
-            <div class="panel-header-line">
-                <span class="panel-header-title">COMPONENT LIBRARY</span>
-                <span class="panel-header-meta">⚙</span>
+    <!-- TOP STATUS & ROUTE BAR -->
+    <header class="flex-none h-[46px] flex items-center justify-between px-5 text-xs bg-gradient-to-b from-white/[0.025] to-transparent border-b border-line">
+        <div class="flex items-center gap-3 min-w-0">
+            <!-- Terminal Dots -->
+            <div class="flex items-center gap-2 mr-3 opacity-80">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57] inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e] inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-[#28c840] inline-block"></span>
             </div>
 
-            @foreach (var category in categories)
-            {
-                <div class="category-group">
-                    <div class="category-header" @onclick="() => category.IsExpanded = !category.IsExpanded">
-                        <span>@category.Icon @category.Name</span>
-                        <span class="category-arrow @(category.IsExpanded ? "open" : "")">›</span>
-                    </div>
-                    @if (category.IsExpanded)
-                    {
-                        <div class="category-items">
-                            @foreach (var item in category.Items)
-                            {
-                                <div class="category-item @(selectedComponent.Id == item.Id ? "active" : "")"
-                                     @onclick="() => SelectComponent(item)">
-                                    <span style="opacity: 0.5; margin-right: 4px;">›</span>
-                                    @item.Title
-                                </div>
-                            }
+            <span class="text-accent font-semibold tracking-wide whitespace-nowrap pl-3 border-l border-line-2 leading-5">
+                GameDev Component Cheatsheet
+            </span>
+            <span class="text-[#6a7e73] whitespace-nowrap overflow-hidden text-ellipsis">
+                — @selectedComponent.SubRoute
+            </span>
+        </div>
+
+        <!-- Page Navigation Links -->
+        <nav class="flex items-center gap-2 text-[11px]">
+            <a href="/" class="px-3 py-1 rounded-md bg-accent-bg text-accent border border-accent-line font-semibold transition-colors">
+                [CHEATSHEET]
+            </a>
+            <a href="/architecture" class="px-3 py-1 rounded-md text-[#9db0a5] hover:text-white hover:bg-white/5 border border-transparent transition-colors">
+                [ARCHITECTURE]
+            </a>
+            <a href="/sandbox" class="px-3 py-1 rounded-md text-[#9db0a5] hover:text-white hover:bg-white/5 border border-transparent transition-colors">
+                [SANDBOX]
+            </a>
+            <div class="hidden md:inline-flex items-center gap-2 pl-3 ml-2 border-l border-line-2 text-[#6a7e73] text-[10.5px] tracking-wider">
+                <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shadow-[0_0_8px_#2ee586]"></span>
+                GODOT 4.x SDK REV_B
+            </div>
+        </nav>
+    </header>
+
+    <!-- 3-COLUMN MAIN LAYOUT -->
+    <div class="flex-1 min-h-0 grid grid-cols-[256px_minmax(0,1fr)_372px] gap-2.5 p-2.5 pb-1">
+        
+        <!-- 1. LEFT SIDEBAR -->
+        <aside class="bg-terminal-1 border border-line rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_14px_36px_rgba(0,0,0,0.35)] overflow-y-auto flex flex-col">
+            <div class="sticky top-0 z-10 h-[42px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest bg-terminal-1/90 backdrop-blur border-b border-line text-accent">
+                <span>COMPONENT LIBRARY</span>
+                <span class="text-[#6a7e73] font-normal font-sans">⚙</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+                @foreach (var category in categories)
+                {
+                    <div class="border-b border-line last:border-b-0">
+                        <div class="p-3 px-4 text-[10.5px] tracking-wider text-[#9db0a5] flex items-center justify-between gap-2 font-semibold cursor-pointer hover:bg-white/[0.025] hover:text-white transition-colors"
+                             @onclick="() => category.IsExpanded = !category.IsExpanded">
+                            <span>@category.Icon @category.Name</span>
+                            <span class="text-xs transition-transform duration-200 @(category.IsExpanded ? "rotate-90 text-accent" : "text-[#465850]")">›</span>
                         </div>
-                    }
-                </div>
-            }
+                        @if (category.IsExpanded)
+                        {
+                            <div class="flex flex-col gap-0.5 px-2 pb-3">
+                                @foreach (var item in category.Items)
+                                {
+                                    <div class="relative px-3 py-2 text-xs rounded-lg cursor-pointer transition-all @(selectedComponent.Id == item.Id ? "bg-gradient-to-r from-accent-bg-2 to-accent/5 text-accent font-semibold shadow-[inset_0_0_0_1px_rgba(46,229,134,0.22)]" : "text-[#9db0a5] hover:bg-white/[0.035] hover:text-white")"
+                                         @onclick="() => SelectComponent(item)">
+                                        <span class="mr-1 opacity-50">›</span>
+                                        @item.Title
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </aside>
 
         <!-- 2. CENTER VIEWPORT -->
-        <main class="viewport-panel">
-            <div class="panel-header-line" style="position: absolute; top: 0; width: 100%; z-index: 10;">
-                <span class="panel-header-title">VIEWPORT <span style="color: #4b5550;">— @selectedComponent.SubRoute</span></span>
-                <span class="panel-header-meta">1:1 FIT</span>
+        <main class="relative bg-terminal-1 border border-line rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_14px_36px_rgba(0,0,0,0.35)] flex flex-col items-center justify-center p-7 pt-14 pb-5 overflow-hidden">
+            <div class="absolute top-0 inset-x-0 h-[42px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest bg-terminal-1/80 backdrop-blur border-b border-line z-10">
+                <span class="text-accent">VIEWPORT <span class="text-[#465850] font-normal">— @selectedComponent.SubRoute</span></span>
+                <span class="text-[#6a7e73] font-normal">1:1 FIT</span>
             </div>
 
-            <div class="viewport-content">
+            <div class="relative z-[1] flex flex-col w-full max-w-[1020px] h-full items-center justify-center">
                 @switch (selectedComponent.Id)
                 {
                     /* UI/UX */
@@ -151,377 +186,363 @@
         </main>
 
         <!-- 3. RIGHT INSPECTOR -->
-        <aside class="inspector-panel">
-            <div class="panel-header-line">
-                <span class="panel-header-title">INSPECTOR</span>
-                <span class="panel-header-meta">— Dynamic Controls</span>
+        <aside class="bg-terminal-1 border border-line rounded-[14px] shadow-[inset_0_1px_0_rgba(255,255,255,0.025),0_14px_36px_rgba(0,0,0,0.35)] flex flex-col overflow-y-auto">
+            <div class="sticky top-0 z-10 h-[42px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest bg-terminal-1/90 backdrop-blur border-b border-line text-accent">
+                <span>INSPECTOR</span>
+                <span class="text-[#6a7e73] font-normal">— Dynamic Controls</span>
             </div>
 
-            <div class="inspector-section">
+            <!-- Dynamic Component Inspector Controls -->
+            <div class="p-4 border-b border-line flex flex-col gap-2">
                 @switch (selectedComponent.Id)
                 {
-                    /* UI/UX CONTROLS */
                     case "linear-bar":
-                        <div class="f-section-label">Health Controls</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => TriggerHealthDelta(-20)">− DAMAGE 20</button>
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => TriggerHealthDelta(10)">+ HEAL 10</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Health Controls</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 hover:border-red-400 active:scale-95 transition-all" 
+                                    @onclick="() => TriggerHealthDelta(-20)">− DAMAGE 20</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 hover:border-accent active:scale-95 transition-all" 
+                                    @onclick="() => TriggerHealthDelta(10)">+ HEAL 10</button>
                         </div>
-                        <div style="margin-bottom: 8px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Current HP (0–100)</span>
-                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@targetHealth</span>
+                        <div class="mt-2">
+                            <div class="flex justify-between items-center text-[11px] text-[#9db0a5] mb-1">
+                                <span>Current HP</span>
+                                <span class="bg-accent-bg border border-accent-line text-accent px-2 py-0.5 rounded text-[11px] font-semibold">@targetHealth</span>
                             </div>
-                            <input type="range" min="0" max="100" value="@targetHealth" @oninput="OnSliderInput" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
+                            <input type="range" min="0" max="100" value="@targetHealth" @oninput="OnSliderInput" class="w-full accent-accent cursor-pointer" />
                         </div>
-                        <div @onclick="() => enableGhost = !enableGhost" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
-                            <div style="width:13px; height:13px; border:1px solid @(enableGhost ? "#4ade80" : "#2a3428"); background:@(enableGhost ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
-                                @if (enableGhost) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
+                        <div @onclick="() => enableGhost = !enableGhost" class="flex items-center gap-2 cursor-pointer mt-1 text-xs text-[#9db0a5] hover:text-white transition-colors">
+                            <div class="w-4 h-4 rounded border flex items-center justify-center transition-colors @(enableGhost ? "bg-accent-bg border-accent text-accent" : "border-line-3 bg-terminal-2")">
+                                @if (enableGhost) { <span class="text-[10px] font-bold">✓</span> }
                             </div>
-                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Ghost Bar Effect</span>
+                            <span>Ghost Bar Effect</span>
                         </div>
                         break;
 
                     case "heart-system":
-                        <div class="f-section-label">Heart System</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => heartPoints = Math.Max(0, heartPoints - 1)">− DAMAGE</button>
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => heartPoints = Math.Min(maxHearts * 2, heartPoints + 1)">+ HEAL</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Heart System</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 hover:border-red-400 active:scale-95 transition-all"
+                                    @onclick="() => heartPoints = Math.Max(0, heartPoints - 1)">− DAMAGE</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 hover:border-accent active:scale-95 transition-all"
+                                    @onclick="() => heartPoints = Math.Min(maxHearts * 2, heartPoints + 1)">+ HEAL</button>
                         </div>
-                        <div class="f-section-label" style="margin-top: 6px;">Container Size (5–30)</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="DecreaseMaxHearts">− MAX HEART</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="IncreaseMaxHearts">+ MAX HEART</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mt-3 mb-1">Container Size (5–30)</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all"
+                                    @onclick="DecreaseMaxHearts">− MAX HEART</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all"
+                                    @onclick="IncreaseMaxHearts">+ MAX HEART</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetHearts">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all mt-1"
+                                @onclick="ResetHearts">RESET</button>
                         break;
 
                     case "overhead-bar":
-                        <div class="f-section-label">Floating Bar</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => overheadHealth = Math.Max(0, overheadHealth - 15)">− DAMAGE 15</button>
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => overheadHealth = Math.Min(100, overheadHealth + 10)">+ HEAL 10</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Floating Bar</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 hover:border-red-400 active:scale-95 transition-all"
+                                    @onclick="() => overheadHealth = Math.Max(0, overheadHealth - 15)">− DAMAGE 15</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 hover:border-accent active:scale-95 transition-all"
+                                    @onclick="() => overheadHealth = Math.Min(100, overheadHealth + 10)">+ HEAL 10</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => overheadHealth = 100">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all mt-1"
+                                @onclick="() => overheadHealth = 100">RESET</button>
                         break;
 
                     case "shield-layer":
-                        <div class="f-section-label">Shield & Armor</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="DamageShield">− HIT</button>
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="HealShieldHealth">+ HEAL</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Shield & Armor</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 hover:border-red-400 active:scale-95 transition-all"
+                                    @onclick="DamageShield">− HIT</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 hover:border-accent active:scale-95 transition-all"
+                                    @onclick="HealShieldHealth">+ HEAL</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetShield">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all mt-1"
+                                @onclick="ResetShield">RESET</button>
                         break;
 
-                    /* MENUS CONTROLS */
                     case "main-menu":
-                        <div class="f-section-label">Main Menu</div>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Main Menu Actions</div>
                         @foreach (var opt in new[] { "NEW GAME", "LOAD GAME", "SETTINGS", "QUIT" })
                         {
-                            <div class="f-row">
-                                <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => TriggerMenuAction(opt)">@opt</button>
-                            </div>
+                            <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 hover:border-line-3 hover:text-white active:scale-95 transition-all"
+                                    @onclick="() => TriggerMenuAction(opt)">@opt</button>
                         }
-                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.54rem; color:#4a6a48; margin-top:8px;">
-                            Keyboard: [W / S] Navigate · [ENTER] Select
-                        </div>
+                        <span class="text-[10px] text-[#6a7e73] mt-1">Keyboard: [W / S] Navigate · [ENTER] Select</span>
                         break;
 
                     case "pause-menu":
-                        <div class="f-section-label">Pause Menu</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => isGamePaused = !isGamePaused">TOGGLE PAUSE (ESC)</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => isGamePaused = false">RESUME</button>
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => isGamePaused = false">QUIT</button>
-                        </div>
-                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.54rem; color:#4a6a48; margin-top:8px;">
-                            Keyboard: Press [ESC] anywhere to Toggle
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Pause State</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 hover:border-amber-400 active:scale-95 transition-all"
+                                @onclick="() => isGamePaused = !isGamePaused">TOGGLE PAUSE (ESC)</button>
+                        <div class="flex gap-2 mt-1">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                    @onclick="() => isGamePaused = false">RESUME</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick="() => isGamePaused = false">QUIT</button>
                         </div>
                         break;
 
                     case "audio-settings":
-                        <div class="f-section-label">Settings</div>
-                        <div style="margin-bottom: 8px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Master Volume</span>
-                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(masterVol * 100))</span>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Audio Sliders</div>
+                        <div class="flex flex-col gap-2">
+                            <div>
+                                <div class="flex justify-between text-[11px] text-[#9db0a5]"><span>Master</span><span>@((int)(masterVol * 100))%</span></div>
+                                <input type="range" min="0" max="1" step="0.01" value="@masterVol" @oninput="e => masterVol = Convert.ToSingle(e.Value)" class="w-full accent-accent" />
                             </div>
-                            <input type="range" min="0" max="1" step="0.01" value="@masterVol" @oninput="e => masterVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
-                        </div>
-                        <div style="margin-bottom: 8px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">SFX Volume</span>
-                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(sfxVol * 100))</span>
+                            <div>
+                                <div class="flex justify-between text-[11px] text-[#9db0a5]"><span>SFX</span><span>@((int)(sfxVol * 100))%</span></div>
+                                <input type="range" min="0" max="1" step="0.01" value="@sfxVol" @oninput="e => sfxVol = Convert.ToSingle(e.Value)" class="w-full accent-accent" />
                             </div>
-                            <input type="range" min="0" max="1" step="0.01" value="@sfxVol" @oninput="e => sfxVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
-                        </div>
-                        <div style="margin-bottom: 8px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
-                                <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Music Volume</span>
-                                <span style="font-family:'JetBrains Mono',monospace; font-size:0.65rem; color:#4ade80; background:#141c14; border:1px solid #2a4028; padding:0 5px;">@((int)(musicVol * 100))</span>
+                            <div>
+                                <div class="flex justify-between text-[11px] text-[#9db0a5]"><span>Music</span><span>@((int)(musicVol * 100))%</span></div>
+                                <input type="range" min="0" max="1" step="0.01" value="@musicVol" @oninput="e => musicVol = Convert.ToSingle(e.Value)" class="w-full accent-accent" />
                             </div>
-                            <input type="range" min="0" max="1" step="0.01" value="@musicVol" @oninput="e => musicVol = Convert.ToSingle(e.Value)" style="width:100%; accent-color:#4ade80; height:4px; cursor:pointer;" />
-                        </div>
-                        <div @onclick="() => settingFullscreen = !settingFullscreen" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
-                            <div style="width:13px; height:13px; border:1px solid @(settingFullscreen ? "#4ade80" : "#2a3428"); background:@(settingFullscreen ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
-                                @if (settingFullscreen) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
-                            </div>
-                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">Fullscreen</span>
-                        </div>
-                        <div @onclick="() => settingVsync = !settingVsync" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:6px;">
-                            <div style="width:13px; height:13px; border:1px solid @(settingVsync ? "#4ade80" : "#2a3428"); background:@(settingVsync ? "#141c14" : "transparent"); display:flex; align-items:center; justify-content:center;">
-                                @if (settingVsync) { <span style="color:#4ade80; font-size:0.55rem;">✓</span> }
-                            </div>
-                            <span style="font-family:'Share Tech Mono',monospace; font-size:0.58rem; color:#4a5a42;">V-Sync</span>
                         </div>
                         break;
 
                     case "hud-overlay":
-                        <div class="f-section-label">HUD Overlay</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="width:100%" @onclick="TakeHudHit">HIT PLAYER (-20 HP)</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">HUD Triggers</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                @onclick="TakeHudHit">HIT PLAYER (-20 HP)</button>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all"
+                                    @onclick="FireWeapon">FIRE WEAPON</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-blue-500/20 to-blue-500/10 text-[#92d4ff] border border-blue-500/40 active:scale-95 transition-all"
+                                    @onclick="ConsumeHudStamina">DASH (-25 STAMINA)</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="flex:1" @onclick="FireWeapon">FIRE WEAPON</button>
-                            <button class="f-btn f-btn-blue" style="flex:1" @onclick="ConsumeHudStamina">DASH (-25 STAMINA)</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick="() => hudScore += 1500">+1500 SCORE</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="ResetHud">RESET</button>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                    @onclick="() => hudScore += 1500">+1500 SCORE</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="ResetHud">RESET</button>
                         </div>
                         break;
 
-                    /* MOVEMENT CONTROLS */
                     case "platformer-2d":
-                        <div class="f-section-label">2D Platformer</div>
-                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Arrow/WASD keys also work in viewport</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => platformerRef?.MoveLeft(true)" 
-                                    @onmouseup="() => platformerRef?.MoveLeft(false)">◄</button>
-                            <button class="f-btn f-btn-green" style="flex:1" 
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">2D Platformer</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => platformerRef?.MoveLeft(true)" @onmouseup="() => platformerRef?.MoveLeft(false)">◄</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
                                     @onclick="() => platformerRef?.TriggerJump()">JUMP ▲</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => platformerRef?.MoveRight(true)" 
-                                    @onmouseup="() => platformerRef?.MoveRight(false)">►</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => platformerRef?.MoveRight(true)" @onmouseup="() => platformerRef?.MoveRight(false)">►</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => platformerRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all mt-1"
+                                @onclick="() => platformerRef?.Reset()">RESET</button>
                         break;
 
                     case "topdown-2d":
-                        <div class="f-section-label">2D Top-Down</div>
-                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Arrow/WASD keys also work in viewport</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" 
-                                    @onmousedown="() => topdownRef?.MoveUp(true)" 
-                                    @onmouseup="() => topdownRef?.MoveUp(false)">▲ UP</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">2D Top-Down</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onmousedown="() => topdownRef?.MoveUp(true)" @onmouseup="() => topdownRef?.MoveUp(false)">▲ UP</button>
+                        <div class="flex gap-2 my-1">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => topdownRef?.MoveLeft(true)" @onmouseup="() => topdownRef?.MoveLeft(false)">◄ LEFT</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => topdownRef?.MoveRight(true)" @onmouseup="() => topdownRef?.MoveRight(false)">► RIGHT</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => topdownRef?.MoveLeft(true)" 
-                                    @onmouseup="() => topdownRef?.MoveLeft(false)">◄ LEFT</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => topdownRef?.MoveRight(true)" 
-                                    @onmouseup="() => topdownRef?.MoveRight(false)">► RIGHT</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" 
-                                    @onmousedown="() => topdownRef?.MoveDown(true)" 
-                                    @onmouseup="() => topdownRef?.MoveDown(false)">▼ DOWN</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => topdownRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onmousedown="() => topdownRef?.MoveDown(true)" @onmouseup="() => topdownRef?.MoveDown(false)">▼ DOWN</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all mt-1"
+                                @onclick="() => topdownRef?.Reset()">RESET</button>
                         break;
 
                     case "fighting-2d":
-                        <div class="f-section-label">Footsies Mechanics</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => fighterRef?.MoveLeft(true)" 
-                                    @onmouseup="() => fighterRef?.MoveLeft(false)">◄ BACK</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" 
-                                    @onmousedown="() => fighterRef?.MoveRight(true)" 
-                                    @onmouseup="() => fighterRef?.MoveRight(false)">► FORWARD</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Footsies Controller</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => fighterRef?.MoveLeft(true)" @onmouseup="() => fighterRef?.MoveLeft(false)">◄ BACK</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => fighterRef?.MoveRight(true)" @onmouseup="() => fighterRef?.MoveRight(false)">► FORWARD</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => fighterRef?.P1Crouch()">CROUCH</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all my-1"
+                                @onclick="() => fighterRef?.P1Crouch()">CROUCH</button>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                    @onclick='() => fighterRef?.P1Poke("LIGHT")'>LIGHT ATTACK</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick='() => fighterRef?.P1Poke("HEAVY")'>HEAVY ATTACK</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="flex:1" @onclick='() => fighterRef?.P1Poke("LIGHT")'>LIGHT ATTACK</button>
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick='() => fighterRef?.P1Poke("HEAVY")'>HEAVY ATTACK</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => fighterRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all mt-1"
+                                @onclick="() => fighterRef?.Reset()">RESET ROUND</button>
                         break;
 
                     case "fps-3d":
-                        <div class="f-section-label">3D FPS</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => fpsRef?.FireWeapon()">FIRE WEAPON</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">3D FPS Controller</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                @onclick="() => fpsRef?.FireWeapon()">FIRE WEAPON</button>
+                        <div class="flex gap-2 my-1">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => fpsRef!.KeyW = true" @onmouseup="() => fpsRef!.KeyW = false">MOVE FWD</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => fpsRef!.KeyS = true" @onmouseup="() => fpsRef!.KeyS = false">MOVE BACK</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => fpsRef!.KeyW = true" @onmouseup="() => fpsRef!.KeyW = false">MOVE FWD</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => fpsRef!.KeyS = true" @onmouseup="() => fpsRef!.KeyS = false">MOVE BACK</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => fpsRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onclick="() => fpsRef?.Reset()">RESET</button>
                         break;
 
                     case "thirdperson-3d":
-                        <div class="f-section-label">3D Third-Person</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="flex:1" @onmousedown="() => tpRef!.KeyW = true" @onmouseup="() => tpRef!.KeyW = false">WALK</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef!.KeyW = false">STOP</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">3D Third-Person</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                    @onmousedown="() => tpRef!.KeyW = true" @onmouseup="() => tpRef!.KeyW = false">WALK</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="() => tpRef!.KeyW = false">STOP</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="() => tpRef!.IsOverShoulderPov = !tpRef!.IsOverShoulderPov">TOGGLE CAMERA POV</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all my-1"
+                                @onclick="() => tpRef!.IsOverShoulderPov = !tpRef!.IsOverShoulderPov">TOGGLE CAMERA POV</button>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="() => tpRef?.Orbit(-30)">◄ ORBIT</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="() => tpRef?.Orbit(30)">ORBIT ►</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef?.Orbit(-30)">◄ ORBIT</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => tpRef?.Orbit(30)">ORBIT ►</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => tpRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all mt-1"
+                                @onclick="() => tpRef?.Reset()">RESET</button>
                         break;
 
-                    /* COMBAT CONTROLS */
                     case "hitscan":
-                        <div class="f-section-label">Hitscan System</div>
-                        <div style="font-family:'Share Tech Mono',monospace; font-size:0.56rem; color:#4a6a48; margin-bottom:8px;">Click canvas to aim · Use buttons to target</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(0)">FIRE → T1</button>
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(1)">FIRE → T2</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Hitscan System</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick="() => hitscanRef?.FireAt(0)">FIRE → T1</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick="() => hitscanRef?.FireAt(1)">FIRE → T2</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="flex:1" @onclick="() => hitscanRef?.FireAt(2)">FIRE → T3</button>
-                            <button class="f-btn f-btn-yellow" style="flex:1" @onclick="() => hitscanRef?.AutoFire()">AUTO FIRE</button>
+                        <div class="flex gap-2 my-1">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick="() => hitscanRef?.FireAt(2)">FIRE → T3</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all"
+                                    @onclick="() => hitscanRef?.AutoFire()">AUTO FIRE</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => hitscanRef?.Reset()">RESET TARGETS</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onclick="() => hitscanRef?.Reset()">RESET TARGETS</button>
                         break;
 
                     case "projectile":
-                        <div class="f-section-label">RigidBody Projectile</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => projectileRef?.SpawnProjectile()">FIRE PROJECTILE</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="TriggerRapidFire">RAPID FIRE (×3)</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => projectileRef?.Reset()">CLEAR ALL</button>
-                        </div>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">RigidBody Projectile</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                @onclick="() => projectileRef?.SpawnProjectile()">FIRE PROJECTILE</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all my-1"
+                                @onclick="TriggerRapidFire">RAPID FIRE (×3)</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onclick="() => projectileRef?.Reset()">CLEAR ALL</button>
                         break;
 
                     case "melee-hitbox":
-                        <div class="f-section-label">Melee Hitbox</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => meleeRef?.MoveLeft(true)" @onmouseup="() => meleeRef?.MoveLeft(false)">◄ MOVE LEFT</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onmousedown="() => meleeRef?.MoveRight(true)" @onmouseup="() => meleeRef?.MoveRight(false)">MOVE RIGHT ►</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Melee Hitbox</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => meleeRef?.MoveLeft(true)" @onmouseup="() => meleeRef?.MoveLeft(false)">◄ LEFT</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onmousedown="() => meleeRef?.MoveRight(true)" @onmouseup="() => meleeRef?.MoveRight(false)">RIGHT ►</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick='() => meleeRef?.Attack("LIGHT")'>LIGHT ATTACK</button>
+                        <div class="flex gap-2 my-1">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all"
+                                    @onclick='() => meleeRef?.Attack("LIGHT")'>LIGHT [J]</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                    @onclick='() => meleeRef?.Attack("HEAVY")'>HEAVY [K]</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="width:100%" @onclick='() => meleeRef?.Attack("HEAVY")'>HEAVY ATTACK</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="() => meleeRef?.Reset()">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onclick="() => meleeRef?.Reset()">RESET</button>
                         break;
 
-                    /* SYSTEMS CONTROLS */
                     case "grid-inventory":
-                        <div class="f-section-label">Grid Inventory</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="width:100%" @onclick="() => inventoryRef?.AddItem()">ADD ITEM</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-yellow" style="width:100%" @onclick="AddFiveItems">ADD × 5</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-red" style="width:100%" @onclick="() => inventoryRef?.ClearAll()">CLEAR ALL</button>
-                        </div>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Grid Inventory</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                @onclick="() => inventoryRef?.AddItem()">ADD ITEM</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-amber-500/20 to-amber-500/10 text-[#ffd47d] border border-amber-500/40 active:scale-95 transition-all my-1"
+                                @onclick="AddFiveItems">ADD × 5</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-red-500/20 to-red-500/10 text-[#ffa3a3] border border-red-500/40 active:scale-95 transition-all"
+                                @onclick="() => inventoryRef?.ClearAll()">CLEAR ALL</button>
                         break;
 
                     case "interact-prompt":
-                        <div class="f-section-label">Interactable Object</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="MoveInteractLeft">◄ MOVE LEFT</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="MoveInteractRight">MOVE RIGHT ►</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Interactable Object</div>
+                        <div class="flex gap-2">
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="MoveInteractLeft">◄ LEFT</button>
+                            <button class="flex-1 h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                    @onclick="MoveInteractRight">RIGHT ►</button>
                         </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="width:100%" @onclick="TriggerInteract">[ E ] INTERACT</button>
-                        </div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-gray" style="width:100%" @onclick="ResetInteract">RESET</button>
-                        </div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all my-1"
+                                @onclick="TriggerInteract">[ E ] INTERACT</button>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-terminal-3 text-[#9db0a5] border border-line-2 active:scale-95 transition-all"
+                                @onclick="ResetInteract">RESET</button>
                         break;
 
                     case "day-night":
-                        <div class="f-section-label">Day / Night Cycle</div>
-                        <div class="f-row">
-                            <button class="f-btn f-btn-green" style="width:100%" @onclick="() => dayNightRef?.TogglePlay()">▶ PLAY / PAUSE</button>
+                        <div class="text-[10px] tracking-wider text-[#6a7e73] font-semibold uppercase mb-1">Day / Night Cycle</div>
+                        <button class="w-full h-[34px] px-3 font-semibold text-xs rounded-md bg-gradient-to-b from-accent/20 to-accent/10 text-[#86ffbf] border border-accent/40 active:scale-95 transition-all"
+                                @onclick="() => dayNightRef?.TogglePlay()">▶ PLAY / PAUSE</button>
+                        <div class="grid grid-cols-2 gap-1.5 my-1.5">
+                            <button class="h-[30px] font-semibold text-[11px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2 hover:text-white" @onclick="() => dayNightRef?.SetTime(0.5)">☀ NOON</button>
+                            <button class="h-[30px] font-semibold text-[11px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2 hover:text-white" @onclick="() => dayNightRef?.SetTime(0.0)">🌙 NIGHT</button>
+                            <button class="h-[30px] font-semibold text-[11px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2 hover:text-white" @onclick="() => dayNightRef?.SetTime(0.25)">🌅 DAWN</button>
+                            <button class="h-[30px] font-semibold text-[11px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2 hover:text-white" @onclick="() => dayNightRef?.SetTime(0.75)">🌆 DUSK</button>
                         </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 6px;">
-                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.5)">☀ NOON</button>
-                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.0)">🌙 NIGHT</button>
-                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.25)">🌅 DAWN</button>
-                            <button class="f-btn f-btn-gray" @onclick="() => dayNightRef?.SetTime(0.75)">🌆 DUSK</button>
-                        </div>
-                        <div class="f-section-label" style="margin-top: 6px;">Speed Multipliers</div>
-                        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(0.5)">0.5x</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(1.0)">1.0x</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(2.0)">2.0x</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(5.0)">5.0x</button>
-                            <button class="f-btn f-btn-gray" style="flex:1" @onclick="() => dayNightRef?.SetSpeed(10.0)">10x</button>
+                        <div class="flex gap-1 my-1">
+                            <button class="flex-1 py-1 text-[10px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2" @onclick="() => dayNightRef?.SetSpeed(0.5)">0.5x</button>
+                            <button class="flex-1 py-1 text-[10px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2" @onclick="() => dayNightRef?.SetSpeed(1.0)">1.0x</button>
+                            <button class="flex-1 py-1 text-[10px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2" @onclick="() => dayNightRef?.SetSpeed(2.0)">2.0x</button>
+                            <button class="flex-1 py-1 text-[10px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2" @onclick="() => dayNightRef?.SetSpeed(5.0)">5.0x</button>
+                            <button class="flex-1 py-1 text-[10px] rounded bg-terminal-3 text-[#9db0a5] border border-line-2" @onclick="() => dayNightRef?.SetSpeed(10.0)">10x</button>
                         </div>
                         <input type="range" min="0" max="1" step="0.001" value="@(dayNightRef?.CurrentTime ?? 0.25)" 
-                               @oninput="e => dayNightRef?.SetTime(Convert.ToDouble(e.Value))" style="width:100%; accent-color:#4ade80;" />
+                               @oninput="e => dayNightRef?.SetTime(Convert.ToDouble(e.Value))" class="w-full accent-accent" />
                         break;
                 }
             </div>
 
-            <!-- CODE OUTPUT -->
-            <div class="panel-header-line" style="border-top: 1px solid #161b18;">
-                <span class="panel-header-title">OUTPUT</span>
-                <span class="panel-header-meta">— Code & Guide</span>
+            <!-- OUTPUT SECTION -->
+            <div class="h-[42px] flex items-center justify-between px-4 text-[10.5px] font-semibold tracking-widest bg-terminal-1/90 border-t border-b border-line text-accent">
+                <span>OUTPUT</span>
+                <span class="text-[#6a7e73] font-normal">— Code & Guide</span>
             </div>
 
-            <div class="output-section">
-                <div class="tab-nav">
-                    <button class="tab-nav-btn @(activeTab == "gdscript" ? "active" : "")" @onclick='() => activeTab = "gdscript"'>[GDScript]</button>
-                    <button class="tab-nav-btn @(activeTab == "csharp" ? "active" : "")" @onclick='() => activeTab = "csharp"'>[C#]</button>
-                    <button class="tab-nav-btn @(activeTab == "guide" ? "active" : "")" @onclick='() => activeTab = "guide"'>[Build Guide]</button>
+            <div class="flex-1 flex flex-col p-3 min-h-[260px]">
+                <div class="flex gap-1 p-1 bg-terminal-0 rounded-lg border border-line mb-3">
+                    <button class="flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-colors @(activeTab == "gdscript" ? "bg-terminal-3 text-accent shadow-sm" : "text-[#6a7e73] hover:text-[#d6e1da]")" 
+                            @onclick='() => activeTab = "gdscript"'>[GDScript]</button>
+                    <button class="flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-colors @(activeTab == "csharp" ? "bg-terminal-3 text-accent shadow-sm" : "text-[#6a7e73] hover:text-[#d6e1da]")" 
+                            @onclick='() => activeTab = "csharp"'>[C#]</button>
+                    <button class="flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-colors @(activeTab == "guide" ? "bg-terminal-3 text-accent shadow-sm" : "text-[#6a7e73] hover:text-[#d6e1da]")" 
+                            @onclick='() => activeTab = "guide"'>[Build Guide]</button>
                 </div>
 
-                <div class="code-wrapper">
-                    <button class="copy-button" @onclick="CopyCode"><span>📋</span> @copyText</button>
-                    @if (activeTab == "gdscript") { <div class="code-display"><pre><code>@selectedComponent.GDScript</code></pre></div> }
-                    else if (activeTab == "csharp") { <div class="code-display"><pre><code>@selectedComponent.CSharpScript</code></pre></div> }
-                    else {
-                        <div class="guide-container">
-                            <h5>SCENE TREE INSTRUCTIONS</h5>
-                            <pre>@selectedComponent.SceneTreeGuide</pre>
-                            <h5>SETUP STEPS</h5>
-                            <ol>@foreach (var s in selectedComponent.SetupSteps) { <li>@s</li> }</ol>
+                <div class="relative flex-1 flex flex-col min-h-0">
+                    <button class="absolute top-2.5 right-3 bg-terminal-3/80 backdrop-blur border border-line-3 hover:border-accent hover:text-accent text-[#9db0a5] text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded flex items-center gap-1.5 z-10 transition-colors" 
+                            @onclick="CopyCode">
+                        <span>📋</span> @copyText
+                    </button>
+
+                    @if (activeTab == "gdscript")
+                    {
+                        <div class="code-display flex-1 bg-[#040706] border border-line rounded-lg p-3 overflow-auto text-xs font-mono leading-relaxed select-text shadow-inner">
+                            <pre><code>@selectedComponent.GDScript</code></pre>
+                        </div>
+                    }
+                    else if (activeTab == "csharp")
+                    {
+                        <div class="code-display flex-1 bg-[#040706] border border-line rounded-lg p-3 overflow-auto text-xs font-mono leading-relaxed select-text shadow-inner">
+                            <pre><code>@selectedComponent.CSharpScript</code></pre>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="guide-container flex-1 bg-[#040706] border border-line rounded-lg p-3 pt-10 overflow-auto text-xs font-mono select-text shadow-inner">
+                            <h5 class="text-accent font-semibold tracking-wider mb-2">SCENE TREE INSTRUCTIONS</h5>
+                            <pre class="bg-blue-500/5 border border-blue-500/10 p-2.5 rounded text-[#8ecbff] mb-4 overflow-x-auto">@selectedComponent.SceneTreeGuide</pre>
+                            <h5 class="text-accent font-semibold tracking-wider mb-2">SETUP STEPS</h5>
+                            <ol class="list-decimal list-inside space-y-1 text-[#9db0a5]">
+                                @foreach (var s in selectedComponent.SetupSteps)
+                                {
+                                    <li>@s</li>
+                                }
+                            </ol>
                         </div>
                     }
                 </div>
@@ -529,8 +550,11 @@
         </aside>
     </div>
 
-    <footer class="bottom-footer">
-        <span class="footer-center-tag">EQUINOX PRODUCTION</span>
+    <!-- BOTTOM FOOTER -->
+    <footer class="flex-none h-[30px] flex items-center justify-center relative px-4 text-[10px] text-[#465850]">
+        <span class="tracking-[0.3em] uppercase transition-colors hover:text-accent">
+            EQUINOX PRODUCTION // GODOT 4 INTERACTIVE SYSTEM
+        </span>
     </footer>
 </div>
 
