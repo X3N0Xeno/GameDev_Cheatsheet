@@ -4,21 +4,20 @@ namespace GameDevCheatsheet.Models;
 
 public class ComponentItem
 {
-    public string Id { get; set; } = "";
-    public string Title { get; set; } = "";
-    public string Category { get; set; } = "";
-    public string SubRoute { get; set; } = "";
-    public string ScriptFilename { get; set; } = "";
-    public string GDScript { get; set; } = "";
-    public string CSharpScript { get; set; } = "";
-    public string SceneTreeGuide { get; set; } = "";
-    public List<string> SetupSteps { get; set; } = new();
-}
+    // --- Database Entity Fields (for Class Diagram / EF Core) ---
+    public int ComponentId { get; set; }
+    public int CategoryId { get; set; }
+    public ComponentCategory? CategoryNavigation { get; set; }
 
-public class ComponentCategory
-{
-    public string Name { get; set; } = "";
-    public string Icon { get; set; } = "";
-    public bool IsExpanded { get; set; } = true;
-    public List<ComponentItem> Items { get; set; } = new();
+    // --- Cheatsheet Domain / UI Fields (Resolves the 91 build errors) ---
+    public string Id { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string SubRoute { get; set; } = string.Empty;
+    public string ScriptFilename { get; set; } = string.Empty;
+    public string GDScript { get; set; } = string.Empty;
+    public string CSharpScript { get; set; } = string.Empty;
+    public string SceneTreeGuide { get; set; } = string.Empty;
+    public List<string> SetupSteps { get; set; } = new();
 }
